@@ -14,10 +14,13 @@ import logo from '@assets/snake-removebg-preview_1772181540141.png';
 
 type GameState = "MENU" | "PLAYING" | "GAMEOVER";
 
+type SnakeSkin = "classic" | "neon" | "galaxy" | "fire" | "ice";
+
 export default function Home() {
   const [gameState, setGameState] = useState<GameState>("MENU");
   const [playerName, setPlayerName] = useState("");
   const [selectedHue, setSelectedHue] = useState(120); // Default Neon Green
+  const [selectedSkin, setSelectedSkin] = useState<SnakeSkin>("classic");
   const [finalScore, setFinalScore] = useState(0);
 
   // In-game HUD State
@@ -224,6 +227,29 @@ export default function Home() {
                 
                 <ColorPicker selectedHue={selectedHue} onChange={setSelectedHue} />
                 
+                {/* Skin Selector */}
+                <div className="space-y-3">
+                  <label className="text-primary/70 text-sm tracking-widest font-display">SELECT SKIN</label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {(['classic', 'neon', 'galaxy', 'fire', 'ice'] as SnakeSkin[]).map(skin => (
+                      <button
+                        key={skin}
+                        type="button"
+                        onClick={() => setSelectedSkin(skin)}
+                        className={`
+                          aspect-square rounded border-2 transition-all uppercase text-xs font-bold
+                          ${selectedSkin === skin 
+                            ? 'border-primary bg-primary/20 shadow-[0_0_15px_hsla(var(--primary)/0.5)]' 
+                            : 'border-primary/30 bg-background/50 hover:border-primary/50'
+                          }
+                        `}
+                      >
+                        {skin}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
                 <NeonButton type="submit" size="lg" className="w-full mt-4" disabled={!playerName.trim()}>
                   INITIALIZE LINK <Activity className="w-5 h-5 ml-2" />
                 </NeonButton>
@@ -244,7 +270,8 @@ export default function Home() {
           >
             <GameCanvas 
               playerName={playerName} 
-              selectedHue={selectedHue} 
+              selectedHue={selectedHue}
+              selectedSkin={selectedSkin}
               onGameOver={handleGameOver}
               updateUI={(score, rank, total) => {
                 setCurrentScore(score);

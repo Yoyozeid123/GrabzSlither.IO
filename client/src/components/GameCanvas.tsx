@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 interface GameCanvasProps {
   playerName: string;
   selectedHue: number;
+  selectedSkin: string;
   onGameOver: (score: number) => void;
   updateUI: (length: number, rank: number, total: number) => void;
   updateLeaderboard: (leaders: { name: string; length: number; isPlayer: boolean }[]) => void;
@@ -10,7 +11,8 @@ interface GameCanvasProps {
 
 export function GameCanvas({ 
   playerName, 
-  selectedHue, 
+  selectedHue,
+  selectedSkin,
   onGameOver,
   updateUI,
   updateLeaderboard
@@ -66,6 +68,52 @@ export function GameCanvas({
       maxLife: number;
     }
     let particles: Particle[] = [];
+    
+    // Sound effects (using Web Audio API for simple sounds)
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    const playEatSound = () => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.value = 800;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      osc.start(audioContext.currentTime);
+      osc.stop(audioContext.currentTime + 0.1);
+    };
+    
+    const playDeathSound = () => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.setValueAtTime(400, audioContext.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.5);
+      osc.type = 'sawtooth';
+      gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      osc.start(audioContext.currentTime);
+      osc.stop(audioContext.currentTime + 0.5);
+    };
+    
+    const playBoostSound = () => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.setValueAtTime(200, audioContext.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.15);
+      osc.type = 'square';
+      gain.gain.setValueAtTime(0.05, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+      osc.start(audioContext.currentTime);
+      osc.stop(audioContext.currentTime + 0.15);
+    };
+    
+    let lastBoostSound = 0;
 
     // Track mouse
     const handleMouseMove = (e: MouseEvent) => {
@@ -99,8 +147,9 @@ export function GameCanvas({
       name: string;
       alive: boolean;
       invincible: number;
+      skin: string;
 
-      constructor(x: number, y: number, isPlayer = false, name = '', hue: number | null = null) {
+      constructor(x: number, y: number, isPlayer = false, name = '', hue: number | null = null, skin = 'classic') {
         this.segments = [{ x, y }];
         this.length = 10;
         this.angle = Math.random() * Math.PI * 2;
@@ -110,6 +159,7 @@ export function GameCanvas({
         this.name = name || `${snakeEmojis[Math.floor(Math.random() * snakeEmojis.length)]} Bot${Math.floor(Math.random() * 1000)}`;
         this.alive = true;
         this.invincible = isPlayer ? 60 : 0;
+        this.skin = skin;
       }
 
       update(targetX?: number, targetY?: number) {
@@ -174,6 +224,12 @@ export function GameCanvas({
               maxLife: 20,
             });
           }
+          // Boost sound (throttled)
+          const now = Date.now();
+          if (now - lastBoostSound > 500) {
+            playBoostSound();
+            lastBoostSound = now;
+          }
         }
         
         while (this.segments.length > this.length) {
@@ -191,8 +247,29 @@ export function GameCanvas({
         drawCtx.shadowBlur = 15;
         drawCtx.shadowColor = `hsl(${this.hue}, 100%, 50%)`;
 
+        // Skin-specific colors
+        let bodyColor = `hsl(${this.hue}, 100%, 50%)`;
+        let bellyColor = `hsl(${this.hue}, 80%, 75%)`;
+        let scaleColor = `hsla(${this.hue}, 100%, 35%, 0.6)`;
+        
+        if (this.skin === 'neon') {
+          drawCtx.shadowBlur = 30;
+          bodyColor = `hsl(${this.hue}, 100%, 60%)`;
+        } else if (this.skin === 'galaxy') {
+          bodyColor = `hsl(${(this.hue + Date.now() / 50) % 360}, 100%, 50%)`;
+          drawCtx.shadowBlur = 20;
+        } else if (this.skin === 'fire') {
+          bodyColor = `hsl(${20 + Math.sin(Date.now() / 100) * 20}, 100%, 50%)`;
+          drawCtx.shadowBlur = 25;
+          drawCtx.shadowColor = '#ff4400';
+        } else if (this.skin === 'ice') {
+          bodyColor = `hsl(${180 + Math.sin(Date.now() / 100) * 20}, 100%, 70%)`;
+          drawCtx.shadowBlur = 25;
+          drawCtx.shadowColor = '#00ffff';
+        }
+
         // Draw body as connected segments first (more efficient)
-        drawCtx.strokeStyle = `hsl(${this.hue}, 100%, 50%)`;
+        drawCtx.strokeStyle = bodyColor;
         drawCtx.lineWidth = 18;
         drawCtx.lineCap = 'round';
         drawCtx.lineJoin = 'round';
@@ -217,7 +294,7 @@ export function GameCanvas({
         
         // Belly stripe
         drawCtx.shadowBlur = 10;
-        drawCtx.strokeStyle = `hsl(${this.hue}, 80%, 75%)`;
+        drawCtx.strokeStyle = bellyColor;
         drawCtx.lineWidth = 8;
         drawCtx.beginPath();
         for (let i = this.segments.length - 1; i >= 0; i--) {
@@ -240,7 +317,7 @@ export function GameCanvas({
           const screenX = seg.x - camX + cWidth / 2;
           const screenY = seg.y - camY + cHeight / 2;
           
-          drawCtx.fillStyle = `hsla(${this.hue}, 100%, 35%, 0.6)`;
+          drawCtx.fillStyle = scaleColor;
           drawCtx.beginPath();
           drawCtx.arc(screenX, screenY, 6, 0, Math.PI * 2);
           drawCtx.fill();
@@ -385,7 +462,7 @@ export function GameCanvas({
     }
 
     // Initialize Game Entities
-    const player = new Snake(WORLD_SIZE / 2, WORLD_SIZE / 2, true, `👑 ${playerName}`, selectedHue);
+    const player = new Snake(WORLD_SIZE / 2, WORLD_SIZE / 2, true, `👑 ${playerName}`, selectedHue, selectedSkin);
     let snakes: Snake[] = [player];
     let pellets: Pellet[] = [];
 
@@ -517,6 +594,9 @@ export function GameCanvas({
         
         if (snake.checkCollision(snakes)) {
           snake.alive = false;
+          if (snake.isPlayer) {
+            playDeathSound();
+          }
           // Explosion particles
           for (let i = 0; i < 30; i++) {
             const angle = (Math.PI * 2 * i) / 30;
@@ -549,6 +629,9 @@ export function GameCanvas({
           const dist = Math.hypot(head.x - p.x, head.y - p.y);
           if (dist < 15) {
             snake.length += 1;
+            if (snake.isPlayer) {
+              playEatSound();
+            }
             // Eat particles
             for (let i = 0; i < 8; i++) {
               const angle = Math.random() * Math.PI * 2;
@@ -634,7 +717,7 @@ export function GameCanvas({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [playerName, selectedHue]);
+  }, [playerName, selectedHue, selectedSkin]);
 
   return (
     <canvas 
