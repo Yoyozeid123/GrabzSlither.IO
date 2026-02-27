@@ -29,6 +29,7 @@ export default function Home() {
   const [selectedSkin, setSelectedSkin] = useState<SnakeSkin>("classic");
   const [gameMode, setGameMode] = useState<GameMode>("singleplayer");
   const [finalScore, setFinalScore] = useState(0);
+  const [gameStats, setGameStats] = useState({ kills: 0, timeSurvived: 0, pelletsEaten: 0 });
   const [unlockedAchievement, setUnlockedAchievement] = useState<Achievement | null>(null);
   const [showAchievements, setShowAchievements] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -83,6 +84,11 @@ export default function Home() {
     };
     frame();
   }, [playerName, createScoreMutation]);
+  
+  const handleGameOverWithStats = useCallback((score: number, stats: any) => {
+    setGameStats(stats);
+    handleGameOver(score);
+  }, [handleGameOver]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden scanline bg-background text-foreground">
@@ -333,7 +339,7 @@ export default function Home() {
                 selectedHue={selectedHue}
                 selectedSkin={selectedSkin}
                 gameMode={gameMode}
-                onGameOver={handleGameOver}
+                onGameOver={handleGameOverWithStats}
                 onAchievementUnlock={setUnlockedAchievement}
                 updateUI={(score, rank, total) => {
                   setCurrentScore(score);
@@ -426,6 +432,22 @@ export default function Home() {
               <div className="text-center mb-8 space-y-2">
                 <p className="font-display text-muted-foreground text-sm tracking-widest">FINAL SCORE</p>
                 <p className="font-display text-5xl text-primary neon-text">{finalScore.toLocaleString()}</p>
+              </div>
+              
+              {/* Game Stats */}
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-accent">{gameStats.kills || 0}</div>
+                  <div className="text-xs text-white/60">KILLS</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">{Math.floor((gameStats.timeSurvived || 0) / 60)}:{String((gameStats.timeSurvived || 0) % 60).padStart(2, '0')}</div>
+                  <div className="text-xs text-white/60">TIME</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-cyan-400">{gameStats.pelletsEaten || 0}</div>
+                  <div className="text-xs text-white/60">PELLETS</div>
+                </div>
               </div>
 
               {createScoreMutation.isPending && (

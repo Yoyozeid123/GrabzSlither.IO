@@ -6,7 +6,7 @@ interface GameCanvasProps {
   selectedHue: number;
   selectedSkin: string;
   gameMode: string;
-  onGameOver: (score: number) => void;
+  onGameOver: (score: number, stats: { kills: number; timeSurvived: number; pelletsEaten: number }) => void;
   onAchievementUnlock: (achievement: any) => void;
   updateUI: (length: number, rank: number, total: number) => void;
   updateLeaderboard: (leaders: { name: string; length: number; isPlayer: boolean }[]) => void;
@@ -175,6 +175,7 @@ export function GameCanvas({
     let achievements = getAchievements();
     let boostCount = 0;
     let pelletsEaten = 0;
+    let killCount = 0;
     const startTime = Date.now();
     
     // Kill feed
@@ -656,7 +657,12 @@ export function GameCanvas({
         }
         
         ctx.restore();
-        onGameOverRef.current(player.length * 10);
+        const timeSurvived = Math.floor((Date.now() - startTime) / 1000);
+        onGameOverRef.current(player.length * 10, {
+          kills: killCount,
+          timeSurvived,
+          pelletsEaten
+        });
         return;
       }
 
@@ -814,6 +820,8 @@ export function GameCanvas({
           });
           
           if (killer) {
+            if (killer.isPlayer) killCount++;
+            
             killFeed.unshift({
               killer: killer.name,
               victim: snake.name,
