@@ -162,11 +162,6 @@ export function GameCanvas({
     let pelletsEaten = 0;
     const startTime = Date.now();
     
-    // Combo system
-    let comboCount = 0;
-    let lastEatTime = 0;
-    const COMBO_TIMEOUT = 2000; // 2 seconds
-    
     // Kill feed
     interface KillEvent {
       killer: string;
@@ -836,15 +831,6 @@ export function GameCanvas({
               playEatSound();
               pelletsEaten++;
               
-              // Combo system
-              const now = Date.now();
-              if (now - lastEatTime < COMBO_TIMEOUT) {
-                comboCount++;
-              } else {
-                comboCount = 1;
-              }
-              lastEatTime = now;
-              
               // Check glutton achievement
               const glutton = checkAchievement(achievements, 'glutton', pelletsEaten);
               if (glutton) onAchievementUnlock(glutton);
@@ -941,27 +927,6 @@ export function GameCanvas({
         ctx.arc(mapX, mapY, snake.isPlayer ? 4 : 2, 0, Math.PI * 2);
         ctx.fill();
       });
-      
-      // Draw combo
-      if (comboCount > 1 && Date.now() - lastEatTime < COMBO_TIMEOUT) {
-        const comboAlpha = Math.min(1, (COMBO_TIMEOUT - (Date.now() - lastEatTime)) / 500);
-        const comboScale = 1 + (comboCount / 10);
-        
-        ctx.save();
-        ctx.translate(canvas.width / 2, 150);
-        ctx.scale(comboScale, comboScale);
-        ctx.globalAlpha = comboAlpha;
-        
-        ctx.font = 'bold 48px "Rajdhani", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#ffff00';
-        ctx.strokeStyle = '#ff6600';
-        ctx.lineWidth = 4;
-        ctx.strokeText(`x${comboCount} COMBO!`, 0, 0);
-        ctx.fillText(`x${comboCount} COMBO!`, 0, 0);
-        
-        ctx.restore();
-      }
       
       // Draw kill feed
       ctx.font = 'bold 14px "Rajdhani", sans-serif';
