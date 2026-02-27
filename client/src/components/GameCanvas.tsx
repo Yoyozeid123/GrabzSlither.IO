@@ -617,7 +617,7 @@ export function GameCanvas({
         this.x = x;
         this.y = y;
         this.type = type;
-        this.radius = 10;
+        this.radius = 15;
         this.spawnTime = Date.now();
       }
 
@@ -645,7 +645,7 @@ export function GameCanvas({
         // Icon
         drawCtx.shadowBlur = 0;
         drawCtx.fillStyle = '#000';
-        drawCtx.font = 'bold 16px Arial';
+        drawCtx.font = 'bold 20px Arial';
         drawCtx.textAlign = 'center';
         drawCtx.textBaseline = 'middle';
         const icon = this.type === 'speed' ? '⚡' : this.type === 'shield' ? '🛡️' : '🧲';
@@ -668,12 +668,12 @@ export function GameCanvas({
     }
     
     // Spawn initial power-ups
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       const types: ('speed' | 'shield' | 'magnet')[] = ['speed', 'shield', 'magnet'];
       powerUps.push(new PowerUp(
         Math.random() * WORLD_SIZE,
         Math.random() * WORLD_SIZE,
-        types[Math.floor(Math.random() * types.length)]
+        types[i % 3]
       ));
     }
 
@@ -1006,8 +1006,8 @@ export function GameCanvas({
         });
       }
       
-      // Respawn power-ups (max 3)
-      if (powerUps.length < 3 && Math.random() < 0.01) {
+      // Respawn power-ups (max 5)
+      if (powerUps.length < 5 && Math.random() < 0.02) {
         const types: ('speed' | 'shield' | 'magnet')[] = ['speed', 'shield', 'magnet'];
         powerUps.push(new PowerUp(
           Math.random() * WORLD_SIZE,
