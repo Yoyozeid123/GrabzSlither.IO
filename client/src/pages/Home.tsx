@@ -167,7 +167,7 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="bg-card/90 backdrop-blur-xl p-8 md:p-12 rounded-2xl neon-box max-w-lg w-full flex flex-col items-center border border-primary/30 shadow-2xl relative overflow-hidden will-change-transform">
+            <div className="bg-card/90 backdrop-blur-xl p-8 md:p-12 rounded-2xl neon-box max-w-lg w-full flex flex-col items-center border border-primary/30 shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto">
               
               {/* Animated glowing bg orb */}
               <motion.div 
@@ -220,7 +220,7 @@ export default function Home() {
                 />
               </motion.div>
               
-              <form onSubmit={handleStartGame} className="w-full space-y-8 relative z-10">
+              <form onSubmit={handleStartGame} className="w-full space-y-6 relative z-10">
                 <div>
                   <CyberInput 
                     placeholder="ENTER CODENAME..." 
