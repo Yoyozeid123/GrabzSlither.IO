@@ -218,15 +218,36 @@ export function GameCanvas({
               drawCtx.stroke();
             }
           } else {
-            // Body segments
-            const radius = 8;
+            // Body segments with scale pattern
+            const radius = 9;
+            const nextSeg = this.segments[i - 1];
+            const angle = nextSeg ? Math.atan2(nextSeg.y - seg.y, nextSeg.x - seg.x) : this.angle;
+            
+            // Main body gradient
             const gradient = drawCtx.createRadialGradient(screenX, screenY, 0, screenX, screenY, radius);
-            gradient.addColorStop(0, `hsl(${this.hue}, 100%, 60%)`);
-            gradient.addColorStop(1, `hsl(${this.hue}, 100%, 40%)`);
+            gradient.addColorStop(0, `hsl(${this.hue}, 100%, 65%)`);
+            gradient.addColorStop(0.6, `hsl(${this.hue}, 100%, 50%)`);
+            gradient.addColorStop(1, `hsl(${this.hue}, 100%, 35%)`);
             
             drawCtx.fillStyle = gradient;
             drawCtx.beginPath();
             drawCtx.arc(screenX, screenY, radius, 0, Math.PI * 2);
+            drawCtx.fill();
+            
+            // Scale pattern overlay
+            if (i % 2 === 0) {
+              drawCtx.fillStyle = `hsla(${this.hue}, 100%, 40%, 0.4)`;
+              drawCtx.beginPath();
+              drawCtx.ellipse(screenX, screenY, radius * 0.8, radius * 0.6, angle, 0, Math.PI * 2);
+              drawCtx.fill();
+            }
+            
+            // Belly stripe (lighter underside)
+            drawCtx.fillStyle = `hsla(${this.hue}, 80%, 75%, 0.3)`;
+            drawCtx.beginPath();
+            const bellyX = screenX + Math.cos(angle + Math.PI / 2) * radius * 0.3;
+            const bellyY = screenY + Math.sin(angle + Math.PI / 2) * radius * 0.3;
+            drawCtx.ellipse(bellyX, bellyY, radius * 0.5, radius * 0.3, angle, 0, Math.PI * 2);
             drawCtx.fill();
           }
         }
