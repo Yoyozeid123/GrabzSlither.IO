@@ -118,24 +118,24 @@ export default function Home() {
               
               {/* Animated glowing bg orb */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/20 rounded-full blur-[100px] pointer-events-none" />
-              
-              {/* Pulsing rings around logo */}
-              <motion.div
-                className="absolute top-[120px] w-56 h-56 border-2 border-primary/30 rounded-full"
-                animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
-                transition={{ duration: 3, repeat: Infinity }}
-              />
-              <motion.div
-                className="absolute top-[120px] w-56 h-56 border-2 border-accent/30 rounded-full"
-                animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
-                transition={{ duration: 3, repeat: Infinity, delay: 1.5 }}
-              />
 
-              <motion.div className="relative z-10 mb-2">
+              <motion.div className="relative mb-6">
+                {/* Pulsing rings around logo */}
+                <motion.div
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 border-2 border-primary/30 rounded-full"
+                  animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                />
+                <motion.div
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 border-2 border-accent/30 rounded-full"
+                  animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: 1.5 }}
+                />
+                
                 <motion.img 
                   src={logo} 
                   alt="GrabzSlither Logo" 
-                  className="w-48 h-48 object-contain drop-shadow-[0_0_25px_rgba(57,255,20,0.7)]"
+                  className="w-48 h-48 object-contain drop-shadow-[0_0_25px_rgba(57,255,20,0.7)] relative z-10"
                   animate={{ 
                     y: [0, -10, 0],
                     rotate: [0, 2, -2, 0]
@@ -143,35 +143,6 @@ export default function Home() {
                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                 />
               </motion.div>
-              
-              <motion.h1 
-                className="text-5xl md:text-6xl font-black text-center mb-2 relative z-10"
-                style={{
-                  background: 'linear-gradient(90deg, #39ff14, #00ffff, #ff00ff, #39ff14)',
-                  backgroundSize: '200% auto',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  textShadow: '0 0 30px rgba(57,255,20,0.5)',
-                }}
-                animate={{
-                  backgroundPosition: ['0% center', '200% center'],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: 'linear',
-                }}
-              >
-                GRABZSLITHER.IO
-              </motion.h1>
-              
-              <motion.p 
-                className="text-primary/70 text-sm tracking-[0.3em] mb-8 relative z-10"
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                ENTER THE ARENA
-              </motion.p>
               
               <form onSubmit={handleStartGame} className="w-full space-y-8 relative z-10">
                 <div>
