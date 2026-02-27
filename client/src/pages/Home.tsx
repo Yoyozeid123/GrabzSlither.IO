@@ -262,6 +262,9 @@ export default function Home() {
               <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded border border-accent/30 shadow-[0_0_10px_hsla(var(--accent)/0.2)]">
                 <span className="text-accent/70">RANK:</span> <span className="font-bold text-accent neon-text-pink">{currentRank} / {totalPlayers}</span>
               </div>
+              <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded border border-cyan-400/30 shadow-[0_0_10px_rgba(0,255,255,0.2)]">
+                <span className="text-cyan-400/70">BOOST:</span> <span className="font-bold text-cyan-400">HOLD SPACE</span>
+              </div>
             </div>
 
             {/* In-Game Mini Leaderboard */}

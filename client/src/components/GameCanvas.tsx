@@ -53,6 +53,7 @@ export function GameCanvas({
     let mouseY = canvas.height / 2;
     let animationFrameId: number;
     let isRunning = true;
+    let isBoosting = false;
     
     // Particle system
     interface Particle {
@@ -72,6 +73,20 @@ export function GameCanvas({
       mouseY = e.clientY;
     };
     window.addEventListener('mousemove', handleMouseMove);
+    
+    // Boost controls
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        isBoosting = true;
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        isBoosting = false;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
 
     // Classes adapted from HTML
     class Snake {
@@ -131,9 +146,11 @@ export function GameCanvas({
         }
 
         const head = this.segments[0];
+        const currentSpeed = this.isPlayer && isBoosting && this.length > 10 ? this.speed * 2 : this.speed;
+        
         const newHead = {
-          x: head.x + Math.cos(this.angle) * this.speed,
-          y: head.y + Math.sin(this.angle) * this.speed
+          x: head.x + Math.cos(this.angle) * currentSpeed,
+          y: head.y + Math.sin(this.angle) * currentSpeed
         };
 
         // Wrap around world
@@ -141,6 +158,24 @@ export function GameCanvas({
         newHead.y = (newHead.y + WORLD_SIZE) % WORLD_SIZE;
 
         this.segments.unshift(newHead);
+        
+        // Boost costs length
+        if (this.isPlayer && isBoosting && this.length > 10) {
+          this.length -= 0.1;
+          // Boost trail particles
+          if (Math.random() < 0.5) {
+            particles.push({
+              x: head.x,
+              y: head.y,
+              vx: -Math.cos(this.angle) * 2 + (Math.random() - 0.5),
+              vy: -Math.sin(this.angle) * 2 + (Math.random() - 0.5),
+              hue: this.hue,
+              life: 20,
+              maxLife: 20,
+            });
+          }
+        }
+        
         while (this.segments.length > this.length) {
           this.segments.pop();
         }
@@ -559,6 +594,31 @@ export function GameCanvas({
         }));
         updateLeaderboardRef.current(top);
       }
+      
+      // Draw minimap
+      const minimapSize = 150;
+      const minimapX = canvas.width - minimapSize - 20;
+      const minimapY = canvas.height - minimapSize - 20;
+      const minimapScale = minimapSize / WORLD_SIZE;
+      
+      // Minimap background
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(minimapX, minimapY, minimapSize, minimapSize);
+      ctx.strokeStyle = 'rgba(57, 255, 20, 0.5)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(minimapX, minimapY, minimapSize, minimapSize);
+      
+      // Draw snakes on minimap
+      aliveSnakes.forEach(snake => {
+        const head = snake.segments[0];
+        const mapX = minimapX + head.x * minimapScale;
+        const mapY = minimapY + head.y * minimapScale;
+        
+        ctx.fillStyle = snake.isPlayer ? '#39ff14' : `hsl(${snake.hue}, 100%, 50%)`;
+        ctx.beginPath();
+        ctx.arc(mapX, mapY, snake.isPlayer ? 4 : 2, 0, Math.PI * 2);
+        ctx.fill();
+      });
 
       animationFrameId = requestAnimationFrame(gameLoop);
     };
@@ -571,6 +631,8 @@ export function GameCanvas({
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', resizeCanvas);
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
     };
   }, [playerName, selectedHue]);
 
