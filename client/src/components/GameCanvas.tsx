@@ -144,112 +144,126 @@ export function GameCanvas({
         drawCtx.shadowBlur = 10;
         drawCtx.shadowColor = `hsl(${this.hue}, 100%, 50%)`;
 
+        // Draw body as connected segments first (more efficient)
+        drawCtx.strokeStyle = `hsl(${this.hue}, 100%, 50%)`;
+        drawCtx.lineWidth = 18;
+        drawCtx.lineCap = 'round';
+        drawCtx.lineJoin = 'round';
+        
+        drawCtx.beginPath();
         for (let i = this.segments.length - 1; i >= 0; i--) {
           const seg = this.segments[i];
           const screenX = seg.x - camX + cWidth / 2;
           const screenY = seg.y - camY + cHeight / 2;
-
-          if (i === 0) {
-            // Snake head - triangular/diamond shape
-            const headLength = 16;
-            const headWidth = 10;
-            const eyeAngle = this.angle;
-            
-            const tipX = screenX + Math.cos(eyeAngle) * headLength;
-            const tipY = screenY + Math.sin(eyeAngle) * headLength;
-            const leftX = screenX + Math.cos(eyeAngle + Math.PI / 2) * headWidth;
-            const leftY = screenY + Math.sin(eyeAngle + Math.PI / 2) * headWidth;
-            const rightX = screenX + Math.cos(eyeAngle - Math.PI / 2) * headWidth;
-            const rightY = screenY + Math.sin(eyeAngle - Math.PI / 2) * headWidth;
-            const backX = screenX - Math.cos(eyeAngle) * 4;
-            const backY = screenY - Math.sin(eyeAngle) * 4;
-            
-            const gradient = drawCtx.createRadialGradient(screenX, screenY, 0, screenX, screenY, headLength);
-            gradient.addColorStop(0, `hsl(${this.hue}, 100%, 60%)`);
-            gradient.addColorStop(1, `hsl(${this.hue}, 100%, 40%)`);
-            
-            drawCtx.fillStyle = gradient;
-            drawCtx.beginPath();
-            drawCtx.moveTo(tipX, tipY);
-            drawCtx.lineTo(leftX, leftY);
-            drawCtx.lineTo(backX, backY);
-            drawCtx.lineTo(rightX, rightY);
-            drawCtx.closePath();
-            drawCtx.fill();
-            
-            // Snake eyes - slitted pupils
-            const eyeOffsetX = 6;
-            const eyeOffsetY = 4;
-            const leftEyeX = screenX + Math.cos(eyeAngle) * eyeOffsetX + Math.cos(eyeAngle + Math.PI / 2) * eyeOffsetY;
-            const leftEyeY = screenY + Math.sin(eyeAngle) * eyeOffsetX + Math.sin(eyeAngle + Math.PI / 2) * eyeOffsetY;
-            const rightEyeX = screenX + Math.cos(eyeAngle) * eyeOffsetX + Math.cos(eyeAngle - Math.PI / 2) * eyeOffsetY;
-            const rightEyeY = screenY + Math.sin(eyeAngle) * eyeOffsetX + Math.sin(eyeAngle - Math.PI / 2) * eyeOffsetY;
-            
-            // Eye background
-            drawCtx.fillStyle = '#ffeb3b';
-            drawCtx.beginPath();
-            drawCtx.arc(leftEyeX, leftEyeY, 3, 0, Math.PI * 2);
-            drawCtx.arc(rightEyeX, rightEyeY, 3, 0, Math.PI * 2);
-            drawCtx.fill();
-            
-            // Vertical slit pupils
-            drawCtx.strokeStyle = '#000';
-            drawCtx.lineWidth = 1.5;
-            drawCtx.beginPath();
-            drawCtx.moveTo(leftEyeX, leftEyeY - 2.5);
-            drawCtx.lineTo(leftEyeX, leftEyeY + 2.5);
-            drawCtx.moveTo(rightEyeX, rightEyeY - 2.5);
-            drawCtx.lineTo(rightEyeX, rightEyeY + 2.5);
-            drawCtx.stroke();
-            
-            // Forked tongue
-            if (Math.sin(Date.now() / 200) > 0.7) {
-              drawCtx.strokeStyle = '#ff1744';
-              drawCtx.lineWidth = 1;
-              const tongueX = tipX + Math.cos(eyeAngle) * 8;
-              const tongueY = tipY + Math.sin(eyeAngle) * 8;
-              drawCtx.beginPath();
-              drawCtx.moveTo(tipX, tipY);
-              drawCtx.lineTo(tongueX, tongueY);
-              drawCtx.moveTo(tongueX, tongueY);
-              drawCtx.lineTo(tongueX + Math.cos(eyeAngle + 0.3) * 4, tongueY + Math.sin(eyeAngle + 0.3) * 4);
-              drawCtx.moveTo(tongueX, tongueY);
-              drawCtx.lineTo(tongueX + Math.cos(eyeAngle - 0.3) * 4, tongueY + Math.sin(eyeAngle - 0.3) * 4);
-              drawCtx.stroke();
-            }
+          
+          if (i === this.segments.length - 1) {
+            drawCtx.moveTo(screenX, screenY);
           } else {
-            // Body segments with scale pattern
-            const radius = 9;
-            const nextSeg = this.segments[i - 1];
-            const angle = nextSeg ? Math.atan2(nextSeg.y - seg.y, nextSeg.x - seg.x) : this.angle;
-            
-            // Main body gradient
-            const gradient = drawCtx.createRadialGradient(screenX, screenY, 0, screenX, screenY, radius);
-            gradient.addColorStop(0, `hsl(${this.hue}, 100%, 65%)`);
-            gradient.addColorStop(0.6, `hsl(${this.hue}, 100%, 50%)`);
-            gradient.addColorStop(1, `hsl(${this.hue}, 100%, 35%)`);
-            
-            drawCtx.fillStyle = gradient;
-            drawCtx.beginPath();
-            drawCtx.arc(screenX, screenY, radius, 0, Math.PI * 2);
-            drawCtx.fill();
-            
-            // Scale pattern overlay
-            if (i % 2 === 0) {
-              drawCtx.fillStyle = `hsla(${this.hue}, 100%, 40%, 0.4)`;
-              drawCtx.beginPath();
-              drawCtx.ellipse(screenX, screenY, radius * 0.8, radius * 0.6, angle, 0, Math.PI * 2);
-              drawCtx.fill();
-            }
-            
-            // Belly stripe (lighter underside)
-            drawCtx.fillStyle = `hsla(${this.hue}, 80%, 75%, 0.3)`;
-            drawCtx.beginPath();
-            const bellyX = screenX + Math.cos(angle + Math.PI / 2) * radius * 0.3;
-            const bellyY = screenY + Math.sin(angle + Math.PI / 2) * radius * 0.3;
-            drawCtx.ellipse(bellyX, bellyY, radius * 0.5, radius * 0.3, angle, 0, Math.PI * 2);
-            drawCtx.fill();
+            drawCtx.lineTo(screenX, screenY);
           }
+        }
+        drawCtx.stroke();
+        
+        // Belly stripe
+        drawCtx.strokeStyle = `hsl(${this.hue}, 80%, 75%)`;
+        drawCtx.lineWidth = 8;
+        drawCtx.beginPath();
+        for (let i = this.segments.length - 1; i >= 0; i--) {
+          const seg = this.segments[i];
+          const screenX = seg.x - camX + cWidth / 2;
+          const screenY = seg.y - camY + cHeight / 2;
+          
+          if (i === this.segments.length - 1) {
+            drawCtx.moveTo(screenX, screenY);
+          } else {
+            drawCtx.lineTo(screenX, screenY);
+          }
+        }
+        drawCtx.stroke();
+        
+        // Scale pattern (every 3rd segment for performance)
+        for (let i = this.segments.length - 1; i >= 1; i -= 3) {
+          const seg = this.segments[i];
+          const screenX = seg.x - camX + cWidth / 2;
+          const screenY = seg.y - camY + cHeight / 2;
+          
+          drawCtx.fillStyle = `hsla(${this.hue}, 100%, 35%, 0.5)`;
+          drawCtx.beginPath();
+          drawCtx.arc(screenX, screenY, 6, 0, Math.PI * 2);
+          drawCtx.fill();
+        }
+        
+        // Draw head last
+        const seg = this.segments[0];
+        const screenX = seg.x - camX + cWidth / 2;
+        const screenY = seg.y - camY + cHeight / 2;
+
+        // Snake head - triangular/diamond shape
+        const headLength = 16;
+        const headWidth = 10;
+        const eyeAngle = this.angle;
+        
+        const tipX = screenX + Math.cos(eyeAngle) * headLength;
+        const tipY = screenY + Math.sin(eyeAngle) * headLength;
+        const leftX = screenX + Math.cos(eyeAngle + Math.PI / 2) * headWidth;
+        const leftY = screenY + Math.sin(eyeAngle + Math.PI / 2) * headWidth;
+        const rightX = screenX + Math.cos(eyeAngle - Math.PI / 2) * headWidth;
+        const rightY = screenY + Math.sin(eyeAngle - Math.PI / 2) * headWidth;
+        const backX = screenX - Math.cos(eyeAngle) * 4;
+        const backY = screenY - Math.sin(eyeAngle) * 4;
+        
+        const gradient = drawCtx.createRadialGradient(screenX, screenY, 0, screenX, screenY, headLength);
+        gradient.addColorStop(0, `hsl(${this.hue}, 100%, 60%)`);
+        gradient.addColorStop(1, `hsl(${this.hue}, 100%, 40%)`);
+        
+        drawCtx.fillStyle = gradient;
+        drawCtx.beginPath();
+        drawCtx.moveTo(tipX, tipY);
+        drawCtx.lineTo(leftX, leftY);
+        drawCtx.lineTo(backX, backY);
+        drawCtx.lineTo(rightX, rightY);
+        drawCtx.closePath();
+        drawCtx.fill();
+        
+        // Snake eyes - slitted pupils
+        const eyeOffsetX = 6;
+        const eyeOffsetY = 4;
+        const leftEyeX = screenX + Math.cos(eyeAngle) * eyeOffsetX + Math.cos(eyeAngle + Math.PI / 2) * eyeOffsetY;
+        const leftEyeY = screenY + Math.sin(eyeAngle) * eyeOffsetX + Math.sin(eyeAngle + Math.PI / 2) * eyeOffsetY;
+        const rightEyeX = screenX + Math.cos(eyeAngle) * eyeOffsetX + Math.cos(eyeAngle - Math.PI / 2) * eyeOffsetY;
+        const rightEyeY = screenY + Math.sin(eyeAngle) * eyeOffsetX + Math.sin(eyeAngle - Math.PI / 2) * eyeOffsetY;
+        
+        // Eye background
+        drawCtx.fillStyle = '#ffeb3b';
+        drawCtx.beginPath();
+        drawCtx.arc(leftEyeX, leftEyeY, 3, 0, Math.PI * 2);
+        drawCtx.arc(rightEyeX, rightEyeY, 3, 0, Math.PI * 2);
+        drawCtx.fill();
+        
+        // Vertical slit pupils
+        drawCtx.strokeStyle = '#000';
+        drawCtx.lineWidth = 1.5;
+        drawCtx.beginPath();
+        drawCtx.moveTo(leftEyeX, leftEyeY - 2.5);
+        drawCtx.lineTo(leftEyeX, leftEyeY + 2.5);
+        drawCtx.moveTo(rightEyeX, rightEyeY - 2.5);
+        drawCtx.lineTo(rightEyeX, rightEyeY + 2.5);
+        drawCtx.stroke();
+        
+        // Forked tongue
+        if (Math.sin(Date.now() / 200) > 0.7) {
+          drawCtx.strokeStyle = '#ff1744';
+          drawCtx.lineWidth = 1;
+          const tongueX = tipX + Math.cos(eyeAngle) * 8;
+          const tongueY = tipY + Math.sin(eyeAngle) * 8;
+          drawCtx.beginPath();
+          drawCtx.moveTo(tipX, tipY);
+          drawCtx.lineTo(tongueX, tongueY);
+          drawCtx.moveTo(tongueX, tongueY);
+          drawCtx.lineTo(tongueX + Math.cos(eyeAngle + 0.3) * 4, tongueY + Math.sin(eyeAngle + 0.3) * 4);
+          drawCtx.moveTo(tongueX, tongueY);
+          drawCtx.lineTo(tongueX + Math.cos(eyeAngle - 0.3) * 4, tongueY + Math.sin(eyeAngle - 0.3) * 4);
+          drawCtx.stroke();
         }
 
         drawCtx.shadowBlur = 0;
