@@ -133,11 +133,11 @@ export default function Home() {
             className="absolute inset-0 flex flex-col items-center justify-center z-50 p-4"
           >
             {/* Animated background snakes */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none will-change-transform">
               {[...Array(8)].map((_, i) => (
                 <motion.div
                   key={i}
-                  className="absolute w-3 h-3 rounded-full"
+                  className="absolute w-3 h-3 rounded-full will-change-transform"
                   style={{
                     background: `hsl(${i * 45}, 100%, 50%)`,
                     boxShadow: `0 0 30px hsl(${i * 45}, 100%, 50%)`,
@@ -157,11 +157,11 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="bg-card/90 backdrop-blur-xl p-8 md:p-12 rounded-2xl neon-box max-w-lg w-full flex flex-col items-center border border-primary/30 shadow-2xl relative overflow-hidden">
+            <div className="bg-card/90 backdrop-blur-xl p-8 md:p-12 rounded-2xl neon-box max-w-lg w-full flex flex-col items-center border border-primary/30 shadow-2xl relative overflow-hidden will-change-transform">
               
               {/* Animated glowing bg orb */}
               <motion.div 
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/20 rounded-full blur-[100px] pointer-events-none"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/20 rounded-full blur-[100px] pointer-events-none will-change-transform"
                 animate={{
                   scale: [1, 1.2, 1],
                   opacity: [0.3, 0.5, 0.3],
@@ -169,27 +169,27 @@ export default function Home() {
                 transition={{ duration: 4, repeat: Infinity }}
               />
 
-              <motion.div className="relative mb-6 flex items-center justify-center">
+              <motion.div className="relative mb-6 flex items-center justify-center will-change-transform">
                 {/* Multiple pulsing rings */}
                 <motion.div
-                  className="absolute w-56 h-56 border-2 border-primary/40 rounded-full"
+                  className="absolute w-56 h-56 border-2 border-primary/40 rounded-full will-change-transform"
                   animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
                   transition={{ duration: 3, repeat: Infinity }}
                 />
                 <motion.div
-                  className="absolute w-56 h-56 border-2 border-accent/40 rounded-full"
+                  className="absolute w-56 h-56 border-2 border-accent/40 rounded-full will-change-transform"
                   animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
                   transition={{ duration: 3, repeat: Infinity, delay: 1 }}
                 />
                 <motion.div
-                  className="absolute w-56 h-56 border-2 border-cyan-400/40 rounded-full"
+                  className="absolute w-56 h-56 border-2 border-cyan-400/40 rounded-full will-change-transform"
                   animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
                   transition={{ duration: 3, repeat: Infinity, delay: 2 }}
                 />
                 
                 {/* Rotating glow effect */}
                 <motion.div
-                  className="absolute w-60 h-60 rounded-full"
+                  className="absolute w-60 h-60 rounded-full will-change-transform"
                   style={{
                     background: 'conic-gradient(from 0deg, transparent, rgba(57,255,20,0.3), transparent)',
                   }}
@@ -200,7 +200,7 @@ export default function Home() {
                 <motion.img 
                   src={logo} 
                   alt="GrabzSlither Logo" 
-                  className="w-48 h-48 object-contain drop-shadow-[0_0_30px_rgba(57,255,20,0.8)] relative z-10"
+                  className="w-48 h-48 object-contain drop-shadow-[0_0_30px_rgba(57,255,20,0.8)] relative z-10 will-change-transform"
                   animate={{ 
                     y: [0, -12, 0],
                     rotate: [0, 3, -3, 0],
