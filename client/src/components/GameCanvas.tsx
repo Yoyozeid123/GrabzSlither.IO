@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { getAchievements, checkAchievement } from "@/lib/achievements";
 
 interface GameCanvasProps {
   playerName: string;
   selectedHue: number;
   selectedSkin: string;
   onGameOver: (score: number) => void;
+  onAchievementUnlock: (achievement: any) => void;
   updateUI: (length: number, rank: number, total: number) => void;
   updateLeaderboard: (leaders: { name: string; length: number; isPlayer: boolean }[]) => void;
 }
@@ -14,6 +16,7 @@ export function GameCanvas({
   selectedHue,
   selectedSkin,
   onGameOver,
+  onAchievementUnlock,
   updateUI,
   updateLeaderboard
 }: GameCanvasProps) {
@@ -130,6 +133,12 @@ export function GameCanvas({
     };
     
     let lastBoostSound = 0;
+    
+    // Achievement tracking
+    let achievements = getAchievements();
+    let boostCount = 0;
+    let pelletsEaten = 0;
+    const startTime = Date.now();
 
     // Track mouse
     const handleMouseMove = (e: MouseEvent) => {
@@ -245,6 +254,11 @@ export function GameCanvas({
           if (now - lastBoostSound > 500) {
             playBoostSound();
             lastBoostSound = now;
+            boostCount++;
+            
+            // Check speed demon achievement
+            const speedDemon = checkAchievement(achievements, 'speed_demon', boostCount);
+            if (speedDemon) onAchievementUnlock(speedDemon);
           }
         }
         
@@ -658,6 +672,11 @@ export function GameCanvas({
             snake.length += 1;
             if (snake.isPlayer) {
               playEatSound();
+              pelletsEaten++;
+              
+              // Check glutton achievement
+              const glutton = checkAchievement(achievements, 'glutton', pelletsEaten);
+              if (glutton) onAchievementUnlock(glutton);
             }
             // Eat particles
             for (let i = 0; i < 8; i++) {
@@ -695,7 +714,29 @@ export function GameCanvas({
       
       // Throttle React state updates to avoid excessive re-renders (every 10 frames approx)
       if (Math.random() < 0.1) {
-        updateUIRef.current(player.length * 10, rank, aliveSnakes.length);
+        const currentScore = player.length * 10;
+        updateUIRef.current(currentScore, rank, aliveSnakes.length);
+        
+        // Check score achievements
+        const firstBlood = checkAchievement(achievements, 'first_blood', currentScore);
+        if (firstBlood) onAchievementUnlock(firstBlood);
+        
+        const growingStrong = checkAchievement(achievements, 'growing_strong', currentScore);
+        if (growingStrong) onAchievementUnlock(growingStrong);
+        
+        const beastMode = checkAchievement(achievements, 'beast_mode', currentScore);
+        if (beastMode) onAchievementUnlock(beastMode);
+        
+        const unstoppable = checkAchievement(achievements, 'unstoppable', currentScore);
+        if (unstoppable) onAchievementUnlock(unstoppable);
+        
+        const legend = checkAchievement(achievements, 'legend', currentScore);
+        if (legend) onAchievementUnlock(legend);
+        
+        // Check survivor achievement
+        const survivalTime = Math.floor((Date.now() - startTime) / 1000);
+        const survivor = checkAchievement(achievements, 'survivor', survivalTime);
+        if (survivor) onAchievementUnlock(survivor);
         
         const top = aliveSnakes.sort((a, b) => b.length - a.length).slice(0, 10).map(s => ({
           name: s.name,

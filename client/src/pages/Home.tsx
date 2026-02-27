@@ -6,8 +6,10 @@ import { CyberInput } from "@/components/CyberInput";
 import { NeonButton } from "@/components/NeonButton";
 import { ColorPicker } from "@/components/ColorPicker";
 import { Leaderboard } from "@/components/Leaderboard";
+import { AchievementToast } from "@/components/AchievementToast";
 import { useCreateHighscore } from "@/hooks/use-highscores";
-import { Trophy, Activity, Ghost } from "lucide-react";
+import { Trophy, Activity, Ghost, Award } from "lucide-react";
+import { getAchievements, Achievement } from "@/lib/achievements";
 
 // Static logo import as requested
 import logo from '@assets/snake-removebg-preview_1772181540141.png';
@@ -22,6 +24,8 @@ export default function Home() {
   const [selectedHue, setSelectedHue] = useState(120); // Default Neon Green
   const [selectedSkin, setSelectedSkin] = useState<SnakeSkin>("classic");
   const [finalScore, setFinalScore] = useState(0);
+  const [unlockedAchievement, setUnlockedAchievement] = useState<Achievement | null>(null);
+  const [showAchievements, setShowAchievements] = useState(false);
 
   // In-game HUD State
   const [currentScore, setCurrentScore] = useState(100);
@@ -253,6 +257,14 @@ export default function Home() {
                 <NeonButton type="submit" size="lg" className="w-full mt-4" disabled={!playerName.trim()}>
                   INITIALIZE LINK <Activity className="w-5 h-5 ml-2" />
                 </NeonButton>
+                
+                <button
+                  type="button"
+                  onClick={() => setShowAchievements(true)}
+                  className="w-full mt-2 py-2 text-primary/70 hover:text-primary transition-colors font-display text-sm tracking-widest flex items-center justify-center gap-2"
+                >
+                  <Award className="w-4 h-4" /> VIEW ACHIEVEMENTS
+                </button>
               </form>
             </div>
           </motion.div>
@@ -273,6 +285,7 @@ export default function Home() {
               selectedHue={selectedHue}
               selectedSkin={selectedSkin}
               onGameOver={handleGameOver}
+              onAchievementUnlock={setUnlockedAchievement}
               updateUI={(score, rank, total) => {
                 setCurrentScore(score);
                 setCurrentRank(rank);
@@ -352,6 +365,69 @@ export default function Home() {
             {/* Global Leaderboard Panel */}
             <Leaderboard />
             
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Achievement Toast */}
+      <AchievementToast 
+        achievement={unlockedAchievement} 
+        onClose={() => setUnlockedAchievement(null)} 
+      />
+      
+      {/* Achievements Panel */}
+      <AnimatePresence>
+        {showAchievements && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowAchievements(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-card p-8 rounded-2xl neon-box max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-3xl font-display text-primary flex items-center gap-2">
+                  <Award className="w-8 h-8" /> ACHIEVEMENTS
+                </h2>
+                <button
+                  onClick={() => setShowAchievements(false)}
+                  className="text-white/60 hover:text-white text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="grid gap-4">
+                {getAchievements().map(achievement => (
+                  <div
+                    key={achievement.id}
+                    className={`
+                      p-4 rounded-lg border-2 flex items-center gap-4
+                      ${achievement.unlocked 
+                        ? 'bg-primary/10 border-primary/50' 
+                        : 'bg-background/50 border-white/10 opacity-50'
+                      }
+                    `}
+                  >
+                    <div className="text-4xl">{achievement.icon}</div>
+                    <div className="flex-1">
+                      <div className="font-bold text-white">{achievement.name}</div>
+                      <div className="text-sm text-white/60">{achievement.description}</div>
+                    </div>
+                    {achievement.unlocked && (
+                      <div className="text-primary font-bold">✓</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
