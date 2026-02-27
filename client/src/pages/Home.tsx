@@ -91,18 +91,87 @@ export default function Home() {
             transition={{ duration: 0.5, type: "spring" }}
             className="absolute inset-0 flex flex-col items-center justify-center z-50 p-4"
           >
-            <div className="bg-card/80 backdrop-blur-xl p-8 md:p-12 rounded-2xl neon-box max-w-lg w-full flex flex-col items-center border border-primary/30 shadow-2xl relative overflow-hidden">
+            {/* Animated background snakes */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {[...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-2 h-2 rounded-full"
+                  style={{
+                    background: `hsl(${i * 72}, 100%, 50%)`,
+                    boxShadow: `0 0 20px hsl(${i * 72}, 100%, 50%)`,
+                  }}
+                  animate={{
+                    x: [Math.random() * window.innerWidth, Math.random() * window.innerWidth],
+                    y: [Math.random() * window.innerHeight, Math.random() * window.innerHeight],
+                  }}
+                  transition={{
+                    duration: 15 + i * 3,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="bg-card/90 backdrop-blur-xl p-8 md:p-12 rounded-2xl neon-box max-w-lg w-full flex flex-col items-center border border-primary/30 shadow-2xl relative overflow-hidden">
               
               {/* Animated glowing bg orb */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/20 rounded-full blur-[100px] pointer-events-none" />
-
-              <motion.img 
-                src={logo} 
-                alt="GrabzSlither Logo" 
-                className="w-48 h-48 object-contain mb-6 drop-shadow-[0_0_15px_rgba(57,255,20,0.5)] relative z-10"
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              
+              {/* Pulsing rings around logo */}
+              <motion.div
+                className="absolute top-[120px] w-56 h-56 border-2 border-primary/30 rounded-full"
+                animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+                transition={{ duration: 3, repeat: Infinity }}
               />
+              <motion.div
+                className="absolute top-[120px] w-56 h-56 border-2 border-accent/30 rounded-full"
+                animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+                transition={{ duration: 3, repeat: Infinity, delay: 1.5 }}
+              />
+
+              <motion.div className="relative z-10 mb-2">
+                <motion.img 
+                  src={logo} 
+                  alt="GrabzSlither Logo" 
+                  className="w-48 h-48 object-contain drop-shadow-[0_0_25px_rgba(57,255,20,0.7)]"
+                  animate={{ 
+                    y: [0, -10, 0],
+                    rotate: [0, 2, -2, 0]
+                  }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                />
+              </motion.div>
+              
+              <motion.h1 
+                className="text-5xl md:text-6xl font-black text-center mb-2 relative z-10"
+                style={{
+                  background: 'linear-gradient(90deg, #39ff14, #00ffff, #ff00ff, #39ff14)',
+                  backgroundSize: '200% auto',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  textShadow: '0 0 30px rgba(57,255,20,0.5)',
+                }}
+                animate={{
+                  backgroundPosition: ['0% center', '200% center'],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: 'linear',
+                }}
+              >
+                GRABZSLITHER.IO
+              </motion.h1>
+              
+              <motion.p 
+                className="text-primary/70 text-sm tracking-[0.3em] mb-8 relative z-10"
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                ENTER THE ARENA
+              </motion.p>
               
               <form onSubmit={handleStartGame} className="w-full space-y-8 relative z-10">
                 <div>
