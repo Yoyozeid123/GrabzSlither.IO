@@ -5,6 +5,7 @@ interface GameCanvasProps {
   playerName: string;
   selectedHue: number;
   selectedSkin: string;
+  gameMode: string;
   onGameOver: (score: number) => void;
   onAchievementUnlock: (achievement: any) => void;
   updateUI: (length: number, rank: number, total: number) => void;
@@ -15,6 +16,7 @@ export function GameCanvas({
   playerName, 
   selectedHue,
   selectedSkin,
+  gameMode,
   onGameOver,
   onAchievementUnlock,
   updateUI,
@@ -51,6 +53,13 @@ export function GameCanvas({
 
     const canvas = canvasRef.current;
     if (!canvas) return;
+    
+    // Multiplayer mode - connect to WebSocket server
+    if (gameMode === 'multiplayer') {
+      // TODO: Implement WebSocket multiplayer
+      console.log('Multiplayer mode - WebSocket connection coming soon!');
+      // For now, fall back to singleplayer
+    }
     
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -797,7 +806,7 @@ export function GameCanvas({
         biteAudioRef.current = null;
       }
     };
-  }, [playerName, selectedHue, selectedSkin]);
+  }, [playerName, selectedHue, selectedSkin, gameMode]);
 
   return (
     <canvas 

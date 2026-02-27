@@ -18,11 +18,14 @@ type GameState = "MENU" | "PLAYING" | "GAMEOVER";
 
 type SnakeSkin = "classic" | "neon" | "galaxy" | "fire" | "ice";
 
+type GameMode = "singleplayer" | "multiplayer";
+
 export default function Home() {
   const [gameState, setGameState] = useState<GameState>("MENU");
   const [playerName, setPlayerName] = useState("");
   const [selectedHue, setSelectedHue] = useState(120); // Default Neon Green
   const [selectedSkin, setSelectedSkin] = useState<SnakeSkin>("classic");
+  const [gameMode, setGameMode] = useState<GameMode>("singleplayer");
   const [finalScore, setFinalScore] = useState(0);
   const [unlockedAchievement, setUnlockedAchievement] = useState<Achievement | null>(null);
   const [showAchievements, setShowAchievements] = useState(false);
@@ -229,6 +232,39 @@ export default function Home() {
                   />
                 </div>
                 
+                {/* Game Mode Selector */}
+                <div className="space-y-3">
+                  <label className="text-primary/70 text-sm tracking-widest font-display">GAME MODE</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setGameMode("singleplayer")}
+                      className={`
+                        py-3 px-4 rounded border-2 transition-all font-display text-sm tracking-wider
+                        ${gameMode === "singleplayer"
+                          ? 'border-primary bg-primary/20 text-primary shadow-[0_0_15px_hsla(var(--primary)/0.5)]' 
+                          : 'border-primary/30 bg-background/50 text-primary/60 hover:border-primary/50'
+                        }
+                      `}
+                    >
+                      🤖 SOLO
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGameMode("multiplayer")}
+                      className={`
+                        py-3 px-4 rounded border-2 transition-all font-display text-sm tracking-wider
+                        ${gameMode === "multiplayer"
+                          ? 'border-accent bg-accent/20 text-accent shadow-[0_0_15px_hsla(var(--accent)/0.5)]' 
+                          : 'border-accent/30 bg-background/50 text-accent/60 hover:border-accent/50'
+                        }
+                      `}
+                    >
+                      🌐 ONLINE
+                    </button>
+                  </div>
+                </div>
+                
                 <ColorPicker selectedHue={selectedHue} onChange={setSelectedHue} />
                 
                 {/* Skin Selector */}
@@ -284,6 +320,7 @@ export default function Home() {
               playerName={playerName} 
               selectedHue={selectedHue}
               selectedSkin={selectedSkin}
+              gameMode={gameMode}
               onGameOver={handleGameOver}
               onAchievementUnlock={setUnlockedAchievement}
               updateUI={(score, rank, total) => {
