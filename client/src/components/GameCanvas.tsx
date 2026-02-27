@@ -605,11 +605,59 @@ export function GameCanvas({
         drawCtx.shadowBlur = 0;
       }
     }
+    
+    class PowerUp {
+      x: number;
+      y: number;
+      type: 'speed' | 'shield' | 'magnet';
+      radius: number;
+      spawnTime: number;
+
+      constructor(x: number, y: number, type: 'speed' | 'shield' | 'magnet') {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.radius = 10;
+        this.spawnTime = Date.now();
+      }
+
+      draw(camX: number, camY: number, drawCtx: CanvasRenderingContext2D, cWidth: number, cHeight: number) {
+        const screenX = this.x - camX + cWidth / 2;
+        const screenY = this.y - camY + cHeight / 2;
+
+        if (screenX < -30 || screenX > cWidth + 30 || 
+            screenY < -30 || screenY > cHeight + 30) return;
+
+        const time = Date.now() / 1000;
+        const pulse = 1 + Math.sin(time * 4) * 0.2;
+
+        // Glow
+        const color = this.type === 'speed' ? '#ffff00' : this.type === 'shield' ? '#00ffff' : '#ff00ff';
+        drawCtx.shadowBlur = 20;
+        drawCtx.shadowColor = color;
+        
+        // Icon background
+        drawCtx.fillStyle = color;
+        drawCtx.beginPath();
+        drawCtx.arc(screenX, screenY, this.radius * pulse, 0, Math.PI * 2);
+        drawCtx.fill();
+        
+        // Icon
+        drawCtx.shadowBlur = 0;
+        drawCtx.fillStyle = '#000';
+        drawCtx.font = 'bold 16px Arial';
+        drawCtx.textAlign = 'center';
+        drawCtx.textBaseline = 'middle';
+        const icon = this.type === 'speed' ? '⚡' : this.type === 'shield' ? '🛡️' : '🧲';
+        drawCtx.fillText(icon, screenX, screenY);
+      }
+    }
 
     // Initialize Game Entities
     const player = new Snake(WORLD_SIZE / 2, WORLD_SIZE / 2, true, `👑 ${playerName}`, selectedHue, selectedSkin);
     let snakes: Snake[] = [player];
     let pellets: Pellet[] = [];
+    let powerUps: PowerUp[] = [];
 
     for (let i = 0; i < BOT_COUNT; i++) {
       snakes.push(new Snake(Math.random() * WORLD_SIZE, Math.random() * WORLD_SIZE, false));
@@ -617,6 +665,16 @@ export function GameCanvas({
     
     for (let i = 0; i < PELLET_COUNT; i++) {
       pellets.push(new Pellet());
+    }
+    
+    // Spawn initial power-ups
+    for (let i = 0; i < 3; i++) {
+      const types: ('speed' | 'shield' | 'magnet')[] = ['speed', 'shield', 'magnet'];
+      powerUps.push(new PowerUp(
+        Math.random() * WORLD_SIZE,
+        Math.random() * WORLD_SIZE,
+        types[Math.floor(Math.random() * types.length)]
+      ));
     }
 
     // Main Game Loop
