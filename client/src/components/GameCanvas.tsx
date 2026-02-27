@@ -185,21 +185,51 @@ export function GameCanvas({
     // Track touch (mobile)
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length > 0) {
-        mouseX = e.touches[0].clientX;
-        mouseY = e.touches[0].clientY;
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        mouseX = touch.clientX - rect.left;
+        mouseY = touch.clientY - rect.top;
         e.preventDefault();
       }
     };
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length > 0) {
-        mouseX = e.touches[0].clientX;
-        mouseY = e.touches[0].clientY;
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        mouseX = touch.clientX - rect.left;
+        mouseY = touch.clientY - rect.top;
+        e.preventDefault();
+      }
+      
+      // Two finger touch = boost
+      if (e.touches.length >= 2) {
+        isBoosting = true;
       }
     };
-    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-    canvas.addEventListener('touchstart', handleTouchStart);
     
-    // Boost controls
+    // Mobile boost (double tap)
+    let lastTapTime = 0;
+    const handleTouchEnd = (e: TouchEvent) => {
+      const now = Date.now();
+      if (now - lastTapTime < 300 && e.touches.length === 0) {
+        // Double tap detected - toggle boost
+        isBoosting = !isBoosting;
+      }
+      lastTapTime = now;
+      
+      // Stop boost when lifting all fingers (unless toggled on)
+      if (e.touches.length === 0 && now - lastTapTime > 300) {
+        // Only stop if not double-tap toggled
+      }
+      
+      e.preventDefault();
+    };
+    
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    
+    // Boost controls (keyboard)
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         isBoosting = true;
@@ -212,30 +242,6 @@ export function GameCanvas({
     };
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-    
-    // Mobile boost (double tap or two finger touch)
-    let lastTapTime = 0;
-    const handleTouchEnd = (e: TouchEvent) => {
-      const now = Date.now();
-      if (now - lastTapTime < 300) {
-        // Double tap detected
-        isBoosting = !isBoosting;
-      }
-      lastTapTime = now;
-      
-      // Stop boost when lifting fingers
-      if (e.touches.length === 0) {
-        isBoosting = false;
-      }
-    };
-    const handleTouchBoost = (e: TouchEvent) => {
-      // Two finger touch = boost
-      if (e.touches.length >= 2) {
-        isBoosting = true;
-      }
-    };
-    canvas.addEventListener('touchend', handleTouchEnd);
-    canvas.addEventListener('touchstart', handleTouchBoost);
 
     // Classes adapted from HTML
     class Snake {
