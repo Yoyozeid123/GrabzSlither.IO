@@ -119,15 +119,15 @@ export default function Home() {
               {/* Animated glowing bg orb */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/20 rounded-full blur-[100px] pointer-events-none" />
 
-              <motion.div className="relative mb-6">
+              <motion.div className="relative mb-6 flex items-center justify-center">
                 {/* Pulsing rings around logo */}
                 <motion.div
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 border-2 border-primary/30 rounded-full"
+                  className="absolute w-56 h-56 border-2 border-primary/30 rounded-full"
                   animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
                   transition={{ duration: 3, repeat: Infinity }}
                 />
                 <motion.div
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 border-2 border-accent/30 rounded-full"
+                  className="absolute w-56 h-56 border-2 border-accent/30 rounded-full"
                   animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
                   transition={{ duration: 3, repeat: Infinity, delay: 1.5 }}
                 />
