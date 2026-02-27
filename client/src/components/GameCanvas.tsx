@@ -801,6 +801,9 @@ export function GameCanvas({
         ctx.arc(screenX - 1, screenY - 1, 1.5, 0, Math.PI * 2);
         ctx.fill();
       });
+      
+      // Draw power-ups
+      powerUps.forEach(p => p.draw(camX, camY, ctx, canvas.width, canvas.height));
 
       // Update and draw snakes
       snakes.forEach(snake => {
@@ -971,6 +974,46 @@ export function GameCanvas({
       // Respawn pellets
       while (pellets.length < PELLET_COUNT) {
         pellets.push(new Pellet());
+      }
+      
+      // Collect power-ups
+      if (player.alive) {
+        const head = player.segments[0];
+        powerUps = powerUps.filter(p => {
+          const dist = Math.hypot(head.x - p.x, head.y - p.y);
+          if (dist < 20) {
+            // Apply power-up effect
+            if (p.type === 'speed') {
+              player.speed = 5; // Boost speed
+              setTimeout(() => { player.speed = 3; }, 5000); // Reset after 5s
+            } else if (p.type === 'shield') {
+              player.invincible = 300; // 5 seconds of invincibility
+            } else if (p.type === 'magnet') {
+              // Attract nearby pellets
+              pellets.forEach(pellet => {
+                const dx = head.x - pellet.x;
+                const dy = head.y - pellet.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < 200) {
+                  pellet.x += dx * 0.1;
+                  pellet.y += dy * 0.1;
+                }
+              });
+            }
+            return false; // Remove power-up
+          }
+          return true;
+        });
+      }
+      
+      // Respawn power-ups (max 3)
+      if (powerUps.length < 3 && Math.random() < 0.01) {
+        const types: ('speed' | 'shield' | 'magnet')[] = ['speed', 'shield', 'magnet'];
+        powerUps.push(new PowerUp(
+          Math.random() * WORLD_SIZE,
+          Math.random() * WORLD_SIZE,
+          types[Math.floor(Math.random() * types.length)]
+        ));
       }
 
       // Respawn bots
