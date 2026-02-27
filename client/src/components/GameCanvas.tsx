@@ -161,15 +161,35 @@ export function GameCanvas({
 
           if (i === 0) {
             // Eyes
-            drawCtx.fillStyle = '#fff';
             const eyeAngle = this.angle;
             const eyeOffset = 5;
+            const leftEyeX = screenX + Math.cos(eyeAngle + 0.3) * eyeOffset;
+            const leftEyeY = screenY + Math.sin(eyeAngle + 0.3) * eyeOffset;
+            const rightEyeX = screenX + Math.cos(eyeAngle - 0.3) * eyeOffset;
+            const rightEyeY = screenY + Math.sin(eyeAngle - 0.3) * eyeOffset;
+            
+            // Eye whites
+            drawCtx.fillStyle = '#fff';
             drawCtx.beginPath();
-            drawCtx.arc(screenX + Math.cos(eyeAngle + 0.3) * eyeOffset, 
-                   screenY + Math.sin(eyeAngle + 0.3) * eyeOffset, 3, 0, Math.PI * 2);
-            drawCtx.arc(screenX + Math.cos(eyeAngle - 0.3) * eyeOffset, 
-                   screenY + Math.sin(eyeAngle - 0.3) * eyeOffset, 3, 0, Math.PI * 2);
+            drawCtx.arc(leftEyeX, leftEyeY, 3, 0, Math.PI * 2);
+            drawCtx.arc(rightEyeX, rightEyeY, 3, 0, Math.PI * 2);
             drawCtx.fill();
+            
+            // Pupils
+            drawCtx.fillStyle = '#000';
+            drawCtx.beginPath();
+            drawCtx.arc(leftEyeX + Math.cos(eyeAngle) * 1, leftEyeY + Math.sin(eyeAngle) * 1, 1.5, 0, Math.PI * 2);
+            drawCtx.arc(rightEyeX + Math.cos(eyeAngle) * 1, rightEyeY + Math.sin(eyeAngle) * 1, 1.5, 0, Math.PI * 2);
+            drawCtx.fill();
+            
+            // Mouth
+            drawCtx.strokeStyle = `hsl(${this.hue}, 100%, 30%)`;
+            drawCtx.lineWidth = 1.5;
+            drawCtx.beginPath();
+            const mouthX = screenX + Math.cos(eyeAngle) * 8;
+            const mouthY = screenY + Math.sin(eyeAngle) * 8;
+            drawCtx.arc(mouthX, mouthY, 3, 0.2, Math.PI - 0.2);
+            drawCtx.stroke();
           }
         }
 
