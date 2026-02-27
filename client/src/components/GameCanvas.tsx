@@ -149,47 +149,85 @@ export function GameCanvas({
           const screenX = seg.x - camX + cWidth / 2;
           const screenY = seg.y - camY + cHeight / 2;
 
-          const radius = i === 0 ? 12 : 8;
-          const gradient = drawCtx.createRadialGradient(screenX, screenY, 0, screenX, screenY, radius);
-          gradient.addColorStop(0, `hsl(${this.hue}, 100%, 60%)`);
-          gradient.addColorStop(1, `hsl(${this.hue}, 100%, 40%)`);
-
-          drawCtx.fillStyle = gradient;
-          drawCtx.beginPath();
-          drawCtx.arc(screenX, screenY, radius, 0, Math.PI * 2);
-          drawCtx.fill();
-
           if (i === 0) {
-            // Eyes
+            // Snake head - triangular/diamond shape
+            const headLength = 16;
+            const headWidth = 10;
             const eyeAngle = this.angle;
-            const eyeOffset = 5;
-            const leftEyeX = screenX + Math.cos(eyeAngle + 0.3) * eyeOffset;
-            const leftEyeY = screenY + Math.sin(eyeAngle + 0.3) * eyeOffset;
-            const rightEyeX = screenX + Math.cos(eyeAngle - 0.3) * eyeOffset;
-            const rightEyeY = screenY + Math.sin(eyeAngle - 0.3) * eyeOffset;
             
-            // Eye whites
-            drawCtx.fillStyle = '#fff';
+            const tipX = screenX + Math.cos(eyeAngle) * headLength;
+            const tipY = screenY + Math.sin(eyeAngle) * headLength;
+            const leftX = screenX + Math.cos(eyeAngle + Math.PI / 2) * headWidth;
+            const leftY = screenY + Math.sin(eyeAngle + Math.PI / 2) * headWidth;
+            const rightX = screenX + Math.cos(eyeAngle - Math.PI / 2) * headWidth;
+            const rightY = screenY + Math.sin(eyeAngle - Math.PI / 2) * headWidth;
+            const backX = screenX - Math.cos(eyeAngle) * 4;
+            const backY = screenY - Math.sin(eyeAngle) * 4;
+            
+            const gradient = drawCtx.createRadialGradient(screenX, screenY, 0, screenX, screenY, headLength);
+            gradient.addColorStop(0, `hsl(${this.hue}, 100%, 60%)`);
+            gradient.addColorStop(1, `hsl(${this.hue}, 100%, 40%)`);
+            
+            drawCtx.fillStyle = gradient;
+            drawCtx.beginPath();
+            drawCtx.moveTo(tipX, tipY);
+            drawCtx.lineTo(leftX, leftY);
+            drawCtx.lineTo(backX, backY);
+            drawCtx.lineTo(rightX, rightY);
+            drawCtx.closePath();
+            drawCtx.fill();
+            
+            // Snake eyes - slitted pupils
+            const eyeOffsetX = 6;
+            const eyeOffsetY = 4;
+            const leftEyeX = screenX + Math.cos(eyeAngle) * eyeOffsetX + Math.cos(eyeAngle + Math.PI / 2) * eyeOffsetY;
+            const leftEyeY = screenY + Math.sin(eyeAngle) * eyeOffsetX + Math.sin(eyeAngle + Math.PI / 2) * eyeOffsetY;
+            const rightEyeX = screenX + Math.cos(eyeAngle) * eyeOffsetX + Math.cos(eyeAngle - Math.PI / 2) * eyeOffsetY;
+            const rightEyeY = screenY + Math.sin(eyeAngle) * eyeOffsetX + Math.sin(eyeAngle - Math.PI / 2) * eyeOffsetY;
+            
+            // Eye background
+            drawCtx.fillStyle = '#ffeb3b';
             drawCtx.beginPath();
             drawCtx.arc(leftEyeX, leftEyeY, 3, 0, Math.PI * 2);
             drawCtx.arc(rightEyeX, rightEyeY, 3, 0, Math.PI * 2);
             drawCtx.fill();
             
-            // Pupils
-            drawCtx.fillStyle = '#000';
-            drawCtx.beginPath();
-            drawCtx.arc(leftEyeX + Math.cos(eyeAngle) * 1, leftEyeY + Math.sin(eyeAngle) * 1, 1.5, 0, Math.PI * 2);
-            drawCtx.arc(rightEyeX + Math.cos(eyeAngle) * 1, rightEyeY + Math.sin(eyeAngle) * 1, 1.5, 0, Math.PI * 2);
-            drawCtx.fill();
-            
-            // Mouth
-            drawCtx.strokeStyle = `hsl(${this.hue}, 100%, 30%)`;
+            // Vertical slit pupils
+            drawCtx.strokeStyle = '#000';
             drawCtx.lineWidth = 1.5;
             drawCtx.beginPath();
-            const mouthX = screenX + Math.cos(eyeAngle) * 8;
-            const mouthY = screenY + Math.sin(eyeAngle) * 8;
-            drawCtx.arc(mouthX, mouthY, 3, 0.2, Math.PI - 0.2);
+            drawCtx.moveTo(leftEyeX, leftEyeY - 2.5);
+            drawCtx.lineTo(leftEyeX, leftEyeY + 2.5);
+            drawCtx.moveTo(rightEyeX, rightEyeY - 2.5);
+            drawCtx.lineTo(rightEyeX, rightEyeY + 2.5);
             drawCtx.stroke();
+            
+            // Forked tongue
+            if (Math.sin(Date.now() / 200) > 0.7) {
+              drawCtx.strokeStyle = '#ff1744';
+              drawCtx.lineWidth = 1;
+              const tongueX = tipX + Math.cos(eyeAngle) * 8;
+              const tongueY = tipY + Math.sin(eyeAngle) * 8;
+              drawCtx.beginPath();
+              drawCtx.moveTo(tipX, tipY);
+              drawCtx.lineTo(tongueX, tongueY);
+              drawCtx.moveTo(tongueX, tongueY);
+              drawCtx.lineTo(tongueX + Math.cos(eyeAngle + 0.3) * 4, tongueY + Math.sin(eyeAngle + 0.3) * 4);
+              drawCtx.moveTo(tongueX, tongueY);
+              drawCtx.lineTo(tongueX + Math.cos(eyeAngle - 0.3) * 4, tongueY + Math.sin(eyeAngle - 0.3) * 4);
+              drawCtx.stroke();
+            }
+          } else {
+            // Body segments
+            const radius = 8;
+            const gradient = drawCtx.createRadialGradient(screenX, screenY, 0, screenX, screenY, radius);
+            gradient.addColorStop(0, `hsl(${this.hue}, 100%, 60%)`);
+            gradient.addColorStop(1, `hsl(${this.hue}, 100%, 40%)`);
+            
+            drawCtx.fillStyle = gradient;
+            drawCtx.beginPath();
+            drawCtx.arc(screenX, screenY, radius, 0, Math.PI * 2);
+            drawCtx.fill();
           }
         }
 
