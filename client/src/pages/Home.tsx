@@ -8,8 +8,9 @@ import { NeonButton } from "@/components/NeonButton";
 import { ColorPicker } from "@/components/ColorPicker";
 import { Leaderboard } from "@/components/Leaderboard";
 import { AchievementToast } from "@/components/AchievementToast";
+import { SettingsModal } from "@/components/SettingsModal";
 import { useCreateHighscore } from "@/hooks/use-highscores";
-import { Trophy, Activity, Ghost, Award } from "lucide-react";
+import { Trophy, Activity, Ghost, Award, Settings } from "lucide-react";
 import { getAchievements, Achievement } from "@/lib/achievements";
 
 // Static logo import as requested
@@ -30,6 +31,7 @@ export default function Home() {
   const [finalScore, setFinalScore] = useState(0);
   const [unlockedAchievement, setUnlockedAchievement] = useState<Achievement | null>(null);
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // In-game HUD State
   const [currentScore, setCurrentScore] = useState(100);
@@ -302,6 +304,14 @@ export default function Home() {
                 >
                   <Award className="w-4 h-4" /> VIEW ACHIEVEMENTS
                 </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setShowSettings(true)}
+                  className="w-full mt-2 py-2 text-cyan-400/70 hover:text-cyan-400 transition-colors font-display text-sm tracking-widest flex items-center justify-center gap-2"
+                >
+                  <Settings className="w-4 h-4" /> SETTINGS
+                </button>
               </form>
             </div>
           </motion.div>
@@ -507,6 +517,9 @@ export default function Home() {
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* Settings Modal */}
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 }
