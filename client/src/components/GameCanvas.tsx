@@ -18,6 +18,7 @@ export function GameCanvas({
   updateLeaderboard
 }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   // Ref to hold the latest onGameOver callback so the game loop uses the latest without restarting
   const onGameOverRef = useRef(onGameOver);
   const updateUIRef = useRef(updateUI);
@@ -30,6 +31,14 @@ export function GameCanvas({
   }, [onGameOver, updateUI, updateLeaderboard]);
 
   useEffect(() => {
+    // Start background music
+    if (!audioRef.current) {
+      audioRef.current = new Audio('/here-we-are.mp3');
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.3;
+      audioRef.current.play().catch(e => console.log('Audio autoplay blocked:', e));
+    }
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     
@@ -716,6 +725,12 @@ export function GameCanvas({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      
+      // Stop music
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
     };
   }, [playerName, selectedHue, selectedSkin]);
 
