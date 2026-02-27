@@ -41,14 +41,24 @@ export function GameCanvas({
     if (!audioRef.current) {
       audioRef.current = new Audio('/here-we-are.mp3');
       audioRef.current.loop = true;
-      audioRef.current.volume = 0.3;
+      const savedVolume = localStorage.getItem('musicVolume');
+      audioRef.current.volume = savedVolume ? parseInt(savedVolume) / 100 : 0.3;
       audioRef.current.play().catch(e => console.log('Audio autoplay blocked:', e));
     }
+    
+    // Listen for volume changes
+    const handleMusicVolumeChange = (e: any) => {
+      if (audioRef.current) {
+        audioRef.current.volume = e.detail;
+      }
+    };
+    window.addEventListener('musicVolumeChange', handleMusicVolumeChange);
     
     // Preload bite sound
     if (!biteAudioRef.current) {
       biteAudioRef.current = new Audio('/bite-sound.mp3');
-      biteAudioRef.current.volume = 0.5;
+      const savedSfx = localStorage.getItem('sfxVolume');
+      biteAudioRef.current.volume = savedSfx ? parseInt(savedSfx) / 100 : 0.5;
     }
 
     const canvas = canvasRef.current;
@@ -113,6 +123,11 @@ export function GameCanvas({
     // Sound effects (using Web Audio API for simple sounds)
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     
+    const getSfxVolume = () => {
+      const saved = localStorage.getItem('sfxVolume');
+      return saved ? parseInt(saved) / 100 : 0.5;
+    };
+    
     const playEatSound = () => {
       const osc = audioContext.createOscillator();
       const gain = audioContext.createGain();
@@ -120,7 +135,7 @@ export function GameCanvas({
       gain.connect(audioContext.destination);
       osc.frequency.value = 800;
       osc.type = 'sine';
-      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gain.gain.setValueAtTime(0.1 * getSfxVolume(), audioContext.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
       osc.start(audioContext.currentTime);
       osc.stop(audioContext.currentTime + 0.1);
@@ -134,7 +149,7 @@ export function GameCanvas({
       osc.frequency.setValueAtTime(400, audioContext.currentTime);
       osc.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.5);
       osc.type = 'sawtooth';
-      gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+      gain.gain.setValueAtTime(0.2 * getSfxVolume(), audioContext.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
       osc.start(audioContext.currentTime);
       osc.stop(audioContext.currentTime + 0.5);
@@ -148,7 +163,7 @@ export function GameCanvas({
       osc.frequency.setValueAtTime(200, audioContext.currentTime);
       osc.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.15);
       osc.type = 'square';
-      gain.gain.setValueAtTime(0.05, audioContext.currentTime);
+      gain.gain.setValueAtTime(0.05 * getSfxVolume(), audioContext.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
       osc.start(audioContext.currentTime);
       osc.stop(audioContext.currentTime + 0.15);
