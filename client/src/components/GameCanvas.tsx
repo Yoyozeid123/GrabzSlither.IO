@@ -576,29 +576,52 @@ export function GameCanvas({
         if (screenX < -20 || screenX > canvas.width + 20 || 
             screenY < -20 || screenY > canvas.height + 20) return;
 
-        // Outer glow
-        const glowGrad = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, 12);
-        glowGrad.addColorStop(0, `hsla(${p.hue}, 100%, 50%, 0.6)`);
+        const time = Date.now() / 1000;
+        const pulse = 1 + Math.sin(time * 3 + p.x + p.y) * 0.2;
+
+        // Outer glow ring
+        const glowGrad = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, 16 * pulse);
+        glowGrad.addColorStop(0, `hsla(${p.hue}, 100%, 50%, 0.8)`);
+        glowGrad.addColorStop(0.5, `hsla(${p.hue}, 100%, 50%, 0.3)`);
         glowGrad.addColorStop(1, `hsla(${p.hue}, 100%, 50%, 0)`);
         ctx.fillStyle = glowGrad;
         ctx.beginPath();
-        ctx.arc(screenX, screenY, 12, 0, Math.PI * 2);
+        ctx.arc(screenX, screenY, 16 * pulse, 0, Math.PI * 2);
         ctx.fill();
 
-        // Core
-        ctx.shadowBlur = 15;
+        // Main pellet body with gradient
+        const bodyGrad = ctx.createRadialGradient(screenX - 2, screenY - 2, 0, screenX, screenY, p.radius * 1.5);
+        bodyGrad.addColorStop(0, `hsl(${p.hue}, 100%, 80%)`);
+        bodyGrad.addColorStop(0.5, `hsl(${p.hue}, 100%, 60%)`);
+        bodyGrad.addColorStop(1, `hsl(${p.hue}, 100%, 40%)`);
+        
+        ctx.shadowBlur = 20;
         ctx.shadowColor = `hsl(${p.hue}, 100%, 50%)`;
-        ctx.fillStyle = `hsl(${p.hue}, 100%, 60%)`;
+        ctx.fillStyle = bodyGrad;
         ctx.beginPath();
-        ctx.arc(screenX, screenY, p.radius, 0, Math.PI * 2);
+        ctx.arc(screenX, screenY, p.radius * 1.2, 0, Math.PI * 2);
         ctx.fill();
         
-        // Sparkle
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        // Inner core
+        ctx.fillStyle = `hsl(${p.hue}, 100%, 90%)`;
         ctx.beginPath();
-        ctx.arc(screenX - 1, screenY - 1, 1.5, 0, Math.PI * 2);
+        ctx.arc(screenX, screenY, p.radius * 0.6, 0, Math.PI * 2);
         ctx.fill();
+        
+        // Sparkle highlight
         ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.arc(screenX - 1.5, screenY - 1.5, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Rotating ring effect
+        ctx.strokeStyle = `hsla(${p.hue}, 100%, 70%, 0.4)`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        const ringAngle = time * 2 + p.x;
+        ctx.arc(screenX, screenY, p.radius * 2, ringAngle, ringAngle + Math.PI);
+        ctx.stroke();
       });
 
       // Update and draw snakes
