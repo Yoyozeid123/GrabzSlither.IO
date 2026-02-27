@@ -74,8 +74,8 @@ export function GameCanvas({
 
     // Game Constants
     const WORLD_SIZE = 4000;
-    const PELLET_COUNT = 800;
-    const BOT_COUNT = 15;
+    const PELLET_COUNT = 600; // Reduced from 800
+    const BOT_COUNT = 12; // Reduced from 15
     const snakeEmojis = ['🐍', '🐉', '🦎', '🐊', '🦖', '🐲', '🪱', '🦕'];
 
     // Game State
@@ -273,15 +273,15 @@ export function GameCanvas({
         if (this.isPlayer && isBoosting && this.length > 10) {
           this.length -= 0.1;
           // Boost trail particles
-          if (Math.random() < 0.5) {
+          if (Math.random() < 0.3) { // Reduced from 0.5
             particles.push({
               x: head.x,
               y: head.y,
               vx: -Math.cos(this.angle) * 2 + (Math.random() - 0.5),
               vy: -Math.sin(this.angle) * 2 + (Math.random() - 0.5),
               hue: this.hue,
-              life: 20,
-              maxLife: 20,
+              life: 15, // Reduced from 20
+              maxLife: 15,
             });
           }
           // Boost sound (throttled)
@@ -621,51 +621,31 @@ export function GameCanvas({
             screenY < -20 || screenY > canvas.height + 20) return;
 
         const time = Date.now() / 1000;
-        const pulse = 1 + Math.sin(time * 3 + p.x + p.y) * 0.2;
+        const pulse = 1 + Math.sin(time * 3 + p.x + p.y) * 0.15; // Reduced pulse
 
-        // Outer glow ring
-        const glowGrad = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, 16 * pulse);
-        glowGrad.addColorStop(0, `hsla(${p.hue}, 100%, 50%, 0.8)`);
-        glowGrad.addColorStop(0.5, `hsla(${p.hue}, 100%, 50%, 0.3)`);
+        // Outer glow (simplified)
+        const glowGrad = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, 12 * pulse);
+        glowGrad.addColorStop(0, `hsla(${p.hue}, 100%, 50%, 0.6)`);
         glowGrad.addColorStop(1, `hsla(${p.hue}, 100%, 50%, 0)`);
         ctx.fillStyle = glowGrad;
         ctx.beginPath();
-        ctx.arc(screenX, screenY, 16 * pulse, 0, Math.PI * 2);
+        ctx.arc(screenX, screenY, 12 * pulse, 0, Math.PI * 2);
         ctx.fill();
 
-        // Main pellet body with gradient
-        const bodyGrad = ctx.createRadialGradient(screenX - 2, screenY - 2, 0, screenX, screenY, p.radius * 1.5);
-        bodyGrad.addColorStop(0, `hsl(${p.hue}, 100%, 80%)`);
-        bodyGrad.addColorStop(0.5, `hsl(${p.hue}, 100%, 60%)`);
-        bodyGrad.addColorStop(1, `hsl(${p.hue}, 100%, 40%)`);
-        
-        ctx.shadowBlur = 20;
+        // Main pellet body
+        ctx.shadowBlur = 15;
         ctx.shadowColor = `hsl(${p.hue}, 100%, 50%)`;
-        ctx.fillStyle = bodyGrad;
+        ctx.fillStyle = `hsl(${p.hue}, 100%, 60%)`;
         ctx.beginPath();
-        ctx.arc(screenX, screenY, p.radius * 1.2, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Inner core
-        ctx.fillStyle = `hsl(${p.hue}, 100%, 90%)`;
-        ctx.beginPath();
-        ctx.arc(screenX, screenY, p.radius * 0.6, 0, Math.PI * 2);
+        ctx.arc(screenX, screenY, p.radius, 0, Math.PI * 2);
         ctx.fill();
         
         // Sparkle highlight
         ctx.shadowBlur = 0;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
         ctx.beginPath();
-        ctx.arc(screenX - 1.5, screenY - 1.5, 1.8, 0, Math.PI * 2);
+        ctx.arc(screenX - 1, screenY - 1, 1.5, 0, Math.PI * 2);
         ctx.fill();
-        
-        // Rotating ring effect
-        ctx.strokeStyle = `hsla(${p.hue}, 100%, 70%, 0.4)`;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        const ringAngle = time * 2 + p.x;
-        ctx.arc(screenX, screenY, p.radius * 2, ringAngle, ringAngle + Math.PI);
-        ctx.stroke();
       });
 
       // Update and draw snakes
@@ -677,15 +657,15 @@ export function GameCanvas({
         }
         
         // Add trail
-        if (snake.alive && Math.random() < 0.3) {
+        if (snake.alive && Math.random() < 0.15) { // Reduced from 0.3
           const head = snake.segments[0];
           trails.push({
             x: head.x,
             y: head.y,
             hue: snake.hue,
-            life: 30,
-            maxLife: 30,
-            size: 8,
+            life: 20, // Reduced from 30
+            maxLife: 20,
+            size: 6, // Reduced from 8
           });
         }
         
@@ -774,16 +754,16 @@ export function GameCanvas({
             }
           }
           // Explosion particles
-          for (let i = 0; i < 30; i++) {
-            const angle = (Math.PI * 2 * i) / 30;
+          for (let i = 0; i < 20; i++) { // Reduced from 30
+            const angle = (Math.PI * 2 * i) / 20;
             particles.push({
               x: snake.segments[0].x,
               y: snake.segments[0].y,
               vx: Math.cos(angle) * (2 + Math.random() * 3),
               vy: Math.sin(angle) * (2 + Math.random() * 3),
               hue: snake.hue,
-              life: 60,
-              maxLife: 60,
+              life: 40, // Reduced from 60
+              maxLife: 40,
             });
           }
           // Drop pellets
@@ -823,7 +803,7 @@ export function GameCanvas({
               if (glutton) onAchievementUnlock(glutton);
             }
             // Eat particles
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i < 5; i++) { // Reduced from 8
               const angle = Math.random() * Math.PI * 2;
               particles.push({
                 x: p.x,
@@ -831,8 +811,8 @@ export function GameCanvas({
                 vx: Math.cos(angle) * 2,
                 vy: Math.sin(angle) * 2,
                 hue: p.hue,
-                life: 30,
-                maxLife: 30,
+                life: 20, // Reduced from 30
+                maxLife: 20,
               });
             }
             return false;
