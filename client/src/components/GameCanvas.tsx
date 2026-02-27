@@ -696,6 +696,17 @@ export function GameCanvas({
           ctx.fill();
         }
       }
+      
+      // Background stars (static based on world position)
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      for (let i = 0; i < 50; i++) {
+        const starX = ((i * 137.5) % WORLD_SIZE - camX + canvas.width / 2) % canvas.width;
+        const starY = ((i * 217.3) % WORLD_SIZE - camY + canvas.height / 2) % canvas.height;
+        const size = (i % 3) + 1;
+        ctx.beginPath();
+        ctx.arc(starX, starY, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       // Draw pellets with enhanced glow
       pellets.forEach(p => {
