@@ -53,6 +53,18 @@ export function GameCanvas({
     let mouseY = canvas.height / 2;
     let animationFrameId: number;
     let isRunning = true;
+    
+    // Particle system
+    interface Particle {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      hue: number;
+      life: number;
+      maxLife: number;
+    }
+    let particles: Particle[] = [];
 
     // Track mouse
     const handleMouseMove = (e: MouseEvent) => {
@@ -141,7 +153,7 @@ export function GameCanvas({
           drawCtx.globalAlpha = 0.5 + Math.sin(Date.now() / 100) * 0.3;
         }
 
-        drawCtx.shadowBlur = 10;
+        drawCtx.shadowBlur = 15;
         drawCtx.shadowColor = `hsl(${this.hue}, 100%, 50%)`;
 
         // Draw body as connected segments first (more efficient)
@@ -149,6 +161,10 @@ export function GameCanvas({
         drawCtx.lineWidth = 18;
         drawCtx.lineCap = 'round';
         drawCtx.lineJoin = 'round';
+        
+        // Outer glow layer
+        drawCtx.shadowBlur = 25;
+        drawCtx.shadowColor = `hsl(${this.hue}, 100%, 50%)`;
         
         drawCtx.beginPath();
         for (let i = this.segments.length - 1; i >= 0; i--) {
@@ -165,6 +181,7 @@ export function GameCanvas({
         drawCtx.stroke();
         
         // Belly stripe
+        drawCtx.shadowBlur = 10;
         drawCtx.strokeStyle = `hsl(${this.hue}, 80%, 75%)`;
         drawCtx.lineWidth = 8;
         drawCtx.beginPath();
@@ -182,12 +199,13 @@ export function GameCanvas({
         drawCtx.stroke();
         
         // Scale pattern (every 3rd segment for performance)
+        drawCtx.shadowBlur = 5;
         for (let i = this.segments.length - 1; i >= 1; i -= 3) {
           const seg = this.segments[i];
           const screenX = seg.x - camX + cWidth / 2;
           const screenY = seg.y - camY + cHeight / 2;
           
-          drawCtx.fillStyle = `hsla(${this.hue}, 100%, 35%, 0.5)`;
+          drawCtx.fillStyle = `hsla(${this.hue}, 100%, 35%, 0.6)`;
           drawCtx.beginPath();
           drawCtx.arc(screenX, screenY, 6, 0, Math.PI * 2);
           drawCtx.fill();
@@ -348,28 +366,25 @@ export function GameCanvas({
     const gameLoop = () => {
       if (!isRunning || !ctx || !canvas) return;
 
-      // Draw background - replicating HTML radial gradient + trailing effect
-      // Create radial gradient for base background
+      // Dark background with subtle gradient
       const bgGrad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height));
-      bgGrad.addColorStop(0, '#1a1a1a');
-      bgGrad.addColorStop(1, '#0d0d0d');
+      bgGrad.addColorStop(0, '#0a0a0a');
+      bgGrad.addColorStop(1, '#000000');
       
-      // Use semi-transparent fill for trails, but mix it with the gradient look
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.fillStyle = 'rgba(13, 13, 13, 0.4)';
+      ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       if (!player.alive) {
         isRunning = false;
-        onGameOverRef.current(player.length * 10); // arbitrary multiplier for higher scores
+        onGameOverRef.current(player.length * 10);
         return;
       }
 
       const camX = player.segments[0].x;
       const camY = player.segments[0].y;
 
-      // Draw Grid (cyberpunk addition)
-      ctx.strokeStyle = 'rgba(57, 255, 20, 0.05)';
+      // Animated neon grid
+      ctx.strokeStyle = `rgba(57, 255, 20, ${0.08 + Math.sin(Date.now() / 1000) * 0.02})`;
       ctx.lineWidth = 1;
       const gridSize = 100;
       const offsetX = camX % gridSize;
@@ -385,9 +400,49 @@ export function GameCanvas({
         ctx.lineTo(canvas.width, y);
       }
       ctx.stroke();
+      
+      // Grid intersections glow
+      ctx.fillStyle = 'rgba(57, 255, 20, 0.15)';
+      for (let x = -offsetX; x < canvas.width; x += gridSize) {
+        for (let y = -offsetY; y < canvas.height; y += gridSize) {
+          ctx.beginPath();
+          ctx.arc(x, y, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
 
-      // Draw pellets
-      pellets.forEach(p => p.draw(camX, camY, ctx, canvas.width, canvas.height));
+      // Draw pellets with enhanced glow
+      pellets.forEach(p => {
+        const screenX = p.x - camX + canvas.width / 2;
+        const screenY = p.y - camY + canvas.height / 2;
+
+        if (screenX < -20 || screenX > canvas.width + 20 || 
+            screenY < -20 || screenY > canvas.height + 20) return;
+
+        // Outer glow
+        const glowGrad = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, 12);
+        glowGrad.addColorStop(0, `hsla(${p.hue}, 100%, 50%, 0.6)`);
+        glowGrad.addColorStop(1, `hsla(${p.hue}, 100%, 50%, 0)`);
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, 12, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Core
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = `hsl(${p.hue}, 100%, 50%)`;
+        ctx.fillStyle = `hsl(${p.hue}, 100%, 60%)`;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Sparkle
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath();
+        ctx.arc(screenX - 1, screenY - 1, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
 
       // Update and draw snakes
       snakes.forEach(snake => {
@@ -398,6 +453,28 @@ export function GameCanvas({
         }
         snake.draw(camX, camY, ctx, canvas.width, canvas.height);
       });
+      
+      // Update and draw particles
+      particles = particles.filter(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.2; // gravity
+        p.life--;
+        
+        const screenX = p.x - camX + canvas.width / 2;
+        const screenY = p.y - camY + canvas.height / 2;
+        
+        const alpha = p.life / p.maxLife;
+        ctx.fillStyle = `hsla(${p.hue}, 100%, 50%, ${alpha})`;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = `hsl(${p.hue}, 100%, 50%)`;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        return p.life > 0;
+      });
 
       // Check collisions
       snakes.forEach(snake => {
@@ -405,6 +482,19 @@ export function GameCanvas({
         
         if (snake.checkCollision(snakes)) {
           snake.alive = false;
+          // Explosion particles
+          for (let i = 0; i < 30; i++) {
+            const angle = (Math.PI * 2 * i) / 30;
+            particles.push({
+              x: snake.segments[0].x,
+              y: snake.segments[0].y,
+              vx: Math.cos(angle) * (2 + Math.random() * 3),
+              vy: Math.sin(angle) * (2 + Math.random() * 3),
+              hue: snake.hue,
+              life: 60,
+              maxLife: 60,
+            });
+          }
           // Drop pellets
           for (let i = 0; i < snake.length / 2; i++) {
             const seg = snake.segments[Math.floor(Math.random() * snake.segments.length)];
@@ -424,6 +514,19 @@ export function GameCanvas({
           const dist = Math.hypot(head.x - p.x, head.y - p.y);
           if (dist < 15) {
             snake.length += 1;
+            // Eat particles
+            for (let i = 0; i < 8; i++) {
+              const angle = Math.random() * Math.PI * 2;
+              particles.push({
+                x: p.x,
+                y: p.y,
+                vx: Math.cos(angle) * 2,
+                vy: Math.sin(angle) * 2,
+                hue: p.hue,
+                life: 30,
+                maxLife: 30,
+              });
+            }
             return false;
           }
           return true;
