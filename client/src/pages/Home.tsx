@@ -93,22 +93,24 @@ export default function Home() {
           >
             {/* Animated background snakes */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              {[...Array(5)].map((_, i) => (
+              {[...Array(8)].map((_, i) => (
                 <motion.div
                   key={i}
-                  className="absolute w-2 h-2 rounded-full"
+                  className="absolute w-3 h-3 rounded-full"
                   style={{
-                    background: `hsl(${i * 72}, 100%, 50%)`,
-                    boxShadow: `0 0 20px hsl(${i * 72}, 100%, 50%)`,
+                    background: `hsl(${i * 45}, 100%, 50%)`,
+                    boxShadow: `0 0 30px hsl(${i * 45}, 100%, 50%)`,
+                    filter: 'blur(1px)',
                   }}
                   animate={{
-                    x: [Math.random() * window.innerWidth, Math.random() * window.innerWidth],
-                    y: [Math.random() * window.innerHeight, Math.random() * window.innerHeight],
+                    x: [Math.random() * window.innerWidth, Math.random() * window.innerWidth, Math.random() * window.innerWidth],
+                    y: [Math.random() * window.innerHeight, Math.random() * window.innerHeight, Math.random() * window.innerHeight],
+                    scale: [1, 1.5, 1],
                   }}
                   transition={{
-                    duration: 15 + i * 3,
+                    duration: 20 + i * 2,
                     repeat: Infinity,
-                    ease: "linear",
+                    ease: "easeInOut",
                   }}
                 />
               ))}
@@ -117,30 +119,53 @@ export default function Home() {
             <div className="bg-card/90 backdrop-blur-xl p-8 md:p-12 rounded-2xl neon-box max-w-lg w-full flex flex-col items-center border border-primary/30 shadow-2xl relative overflow-hidden">
               
               {/* Animated glowing bg orb */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/20 rounded-full blur-[100px] pointer-events-none" />
+              <motion.div 
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/20 rounded-full blur-[100px] pointer-events-none"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0.5, 0.3],
+                }}
+                transition={{ duration: 4, repeat: Infinity }}
+              />
 
               <motion.div className="relative mb-6 flex items-center justify-center">
-                {/* Pulsing rings around logo */}
+                {/* Multiple pulsing rings */}
                 <motion.div
-                  className="absolute w-56 h-56 border-2 border-primary/30 rounded-full"
-                  animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+                  className="absolute w-56 h-56 border-2 border-primary/40 rounded-full"
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
                   transition={{ duration: 3, repeat: Infinity }}
                 />
                 <motion.div
-                  className="absolute w-56 h-56 border-2 border-accent/30 rounded-full"
-                  animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
-                  transition={{ duration: 3, repeat: Infinity, delay: 1.5 }}
+                  className="absolute w-56 h-56 border-2 border-accent/40 rounded-full"
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: 1 }}
+                />
+                <motion.div
+                  className="absolute w-56 h-56 border-2 border-cyan-400/40 rounded-full"
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: 2 }}
+                />
+                
+                {/* Rotating glow effect */}
+                <motion.div
+                  className="absolute w-60 h-60 rounded-full"
+                  style={{
+                    background: 'conic-gradient(from 0deg, transparent, rgba(57,255,20,0.3), transparent)',
+                  }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
                 />
                 
                 <motion.img 
                   src={logo} 
                   alt="GrabzSlither Logo" 
-                  className="w-48 h-48 object-contain drop-shadow-[0_0_25px_rgba(57,255,20,0.7)] relative z-10"
+                  className="w-48 h-48 object-contain drop-shadow-[0_0_30px_rgba(57,255,20,0.8)] relative z-10"
                   animate={{ 
-                    y: [0, -10, 0],
-                    rotate: [0, 2, -2, 0]
+                    y: [0, -12, 0],
+                    rotate: [0, 3, -3, 0],
+                    scale: [1, 1.05, 1],
                   }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
                 />
               </motion.div>
               
