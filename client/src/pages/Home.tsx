@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { GameCanvas } from "@/components/GameCanvas";
+import { MultiplayerCanvas } from "@/components/MultiplayerCanvas";
 import { CyberInput } from "@/components/CyberInput";
 import { NeonButton } from "@/components/NeonButton";
 import { ColorPicker } from "@/components/ColorPicker";
@@ -316,20 +317,36 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             className="absolute inset-0 z-10"
           >
-            <GameCanvas 
-              playerName={playerName} 
-              selectedHue={selectedHue}
-              selectedSkin={selectedSkin}
-              gameMode={gameMode}
-              onGameOver={handleGameOver}
-              onAchievementUnlock={setUnlockedAchievement}
-              updateUI={(score, rank, total) => {
-                setCurrentScore(score);
-                setCurrentRank(rank);
-                setTotalPlayers(total);
-              }}
-              updateLeaderboard={setGameLeaders}
-            />
+            {gameMode === 'singleplayer' ? (
+              <GameCanvas 
+                playerName={playerName} 
+                selectedHue={selectedHue}
+                selectedSkin={selectedSkin}
+                gameMode={gameMode}
+                onGameOver={handleGameOver}
+                onAchievementUnlock={setUnlockedAchievement}
+                updateUI={(score, rank, total) => {
+                  setCurrentScore(score);
+                  setCurrentRank(rank);
+                  setTotalPlayers(total);
+                }}
+                updateLeaderboard={setGameLeaders}
+              />
+            ) : (
+              <MultiplayerCanvas
+                playerName={playerName}
+                selectedHue={selectedHue}
+                selectedSkin={selectedSkin}
+                onGameOver={handleGameOver}
+                onAchievementUnlock={setUnlockedAchievement}
+                updateUI={(score, rank, total) => {
+                  setCurrentScore(score);
+                  setCurrentRank(rank);
+                  setTotalPlayers(total);
+                }}
+                updateLeaderboard={setGameLeaders}
+              />
+            )}
             
             {/* HUD Overlay */}
             <div className="absolute top-4 left-4 pointer-events-none z-20 text-white font-display space-y-3 text-shadow-sm">
