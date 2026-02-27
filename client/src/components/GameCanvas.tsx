@@ -19,6 +19,7 @@ export function GameCanvas({
 }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const biteAudioRef = useRef<HTMLAudioElement | null>(null);
   // Ref to hold the latest onGameOver callback so the game loop uses the latest without restarting
   const onGameOverRef = useRef(onGameOver);
   const updateUIRef = useRef(updateUI);
@@ -37,6 +38,12 @@ export function GameCanvas({
       audioRef.current.loop = true;
       audioRef.current.volume = 0.3;
       audioRef.current.play().catch(e => console.log('Audio autoplay blocked:', e));
+    }
+    
+    // Preload bite sound
+    if (!biteAudioRef.current) {
+      biteAudioRef.current = new Audio('/bite-sound.mp3');
+      biteAudioRef.current.volume = 0.5;
     }
 
     const canvas = canvasRef.current;
@@ -497,6 +504,12 @@ export function GameCanvas({
 
       if (!player.alive) {
         isRunning = false;
+        
+        // Lower music volume
+        if (audioRef.current) {
+          audioRef.current.volume = 0.1;
+        }
+        
         onGameOverRef.current(player.length * 10);
         return;
       }
@@ -605,6 +618,11 @@ export function GameCanvas({
           snake.alive = false;
           if (snake.isPlayer) {
             playDeathSound();
+            // Play FNAF bite sound
+            if (biteAudioRef.current) {
+              biteAudioRef.current.currentTime = 0;
+              biteAudioRef.current.play().catch(e => console.log('Bite sound error:', e));
+            }
           }
           // Explosion particles
           for (let i = 0; i < 30; i++) {
@@ -726,10 +744,16 @@ export function GameCanvas({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       
-      // Stop music
+      // Stop music and reset volume for next game
       if (audioRef.current) {
         audioRef.current.pause();
+        audioRef.current.volume = 0.3;
         audioRef.current = null;
+      }
+      
+      if (biteAudioRef.current) {
+        biteAudioRef.current.pause();
+        biteAudioRef.current = null;
       }
     };
   }, [playerName, selectedHue, selectedSkin]);
