@@ -332,15 +332,28 @@ export default function Home() {
             />
             
             {/* HUD Overlay */}
-            <div className="absolute top-4 left-4 pointer-events-none z-20 text-white font-display text-xl space-y-2 text-shadow-sm">
-              <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded border border-primary/30 shadow-[0_0_10px_hsla(var(--primary)/0.2)]">
-                <span className="text-primary/70">SCORE:</span> <span className="font-bold text-primary neon-text">{currentScore}</span>
+            <div className="absolute top-4 left-4 pointer-events-none z-20 text-white font-display space-y-3 text-shadow-sm">
+              <motion.div 
+                className="bg-gradient-to-r from-black/70 to-black/50 backdrop-blur-md px-6 py-3 rounded-lg border-2 border-primary/40 shadow-[0_0_20px_hsla(var(--primary)/0.3)]"
+                animate={{ scale: [1, 1.02, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <div className="text-primary/70 text-xs tracking-widest mb-1">SCORE</div>
+                <div className="font-black text-3xl text-primary neon-text tracking-wider">{currentScore.toLocaleString()}</div>
+              </motion.div>
+              
+              <div className="bg-gradient-to-r from-black/70 to-black/50 backdrop-blur-md px-6 py-3 rounded-lg border-2 border-accent/40 shadow-[0_0_20px_hsla(var(--accent)/0.3)]">
+                <div className="text-accent/70 text-xs tracking-widest mb-1">RANK</div>
+                <div className="font-black text-2xl text-accent neon-text-pink">
+                  #{currentRank} <span className="text-sm text-white/60">/ {totalPlayers}</span>
+                </div>
               </div>
-              <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded border border-accent/30 shadow-[0_0_10px_hsla(var(--accent)/0.2)]">
-                <span className="text-accent/70">RANK:</span> <span className="font-bold text-accent neon-text-pink">{currentRank} / {totalPlayers}</span>
-              </div>
-              <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded border border-cyan-400/30 shadow-[0_0_10px_rgba(0,255,255,0.2)]">
-                <span className="text-cyan-400/70">BOOST:</span> <span className="font-bold text-cyan-400">HOLD SPACE</span>
+              
+              <div className="bg-gradient-to-r from-black/70 to-black/50 backdrop-blur-md px-6 py-3 rounded-lg border-2 border-cyan-400/40 shadow-[0_0_20px_rgba(0,255,255,0.3)]">
+                <div className="text-cyan-400/70 text-xs tracking-widest mb-1">BOOST</div>
+                <div className="font-bold text-sm text-cyan-400 flex items-center gap-2">
+                  <span className="animate-pulse">⚡</span> HOLD SPACE
+                </div>
               </div>
             </div>
 

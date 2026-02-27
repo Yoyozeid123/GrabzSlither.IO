@@ -84,6 +84,8 @@ export function GameCanvas({
     let animationFrameId: number;
     let isRunning = true;
     let isBoosting = false;
+    let screenShake = 0;
+    let deathFlash = 0;
     
     // Particle system
     interface Particle {
@@ -96,6 +98,17 @@ export function GameCanvas({
       maxLife: number;
     }
     let particles: Particle[] = [];
+    
+    // Trail system
+    interface Trail {
+      x: number;
+      y: number;
+      hue: number;
+      life: number;
+      maxLife: number;
+      size: number;
+    }
+    let trails: Trail[] = [];
     
     // Sound effects (using Web Audio API for simple sounds)
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -148,6 +161,19 @@ export function GameCanvas({
     let boostCount = 0;
     let pelletsEaten = 0;
     const startTime = Date.now();
+    
+    // Combo system
+    let comboCount = 0;
+    let lastEatTime = 0;
+    const COMBO_TIMEOUT = 2000; // 2 seconds
+    
+    // Kill feed
+    interface KillEvent {
+      killer: string;
+      victim: string;
+      time: number;
+    }
+    let killFeed: KillEvent[] = [];
 
     // Track mouse
     const handleMouseMove = (e: MouseEvent) => {
@@ -517,6 +543,16 @@ export function GameCanvas({
     const gameLoop = () => {
       if (!isRunning || !ctx || !canvas) return;
 
+      // Apply screen shake
+      ctx.save();
+      if (screenShake > 0) {
+        ctx.translate(
+          (Math.random() - 0.5) * screenShake,
+          (Math.random() - 0.5) * screenShake
+        );
+        screenShake *= 0.9;
+      }
+
       // Dark background with subtle gradient
       const bgGrad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height));
       bgGrad.addColorStop(0, '#0a0a0a');
@@ -524,6 +560,13 @@ export function GameCanvas({
       
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Death flash
+      if (deathFlash > 0) {
+        ctx.fillStyle = `rgba(255, 0, 0, ${deathFlash})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        deathFlash *= 0.85;
+      }
 
       if (!player.alive) {
         isRunning = false;
@@ -533,6 +576,7 @@ export function GameCanvas({
           audioRef.current.volume = 0.1;
         }
         
+        ctx.restore();
         onGameOverRef.current(player.length * 10);
         return;
       }
@@ -631,7 +675,42 @@ export function GameCanvas({
         } else {
           snake.update();
         }
+        
+        // Add trail
+        if (snake.alive && Math.random() < 0.3) {
+          const head = snake.segments[0];
+          trails.push({
+            x: head.x,
+            y: head.y,
+            hue: snake.hue,
+            life: 30,
+            maxLife: 30,
+            size: 8,
+          });
+        }
+        
         snake.draw(camX, camY, ctx, canvas.width, canvas.height);
+      });
+      
+      // Update and draw trails
+      trails = trails.filter(t => {
+        t.life--;
+        
+        const screenX = t.x - camX + canvas.width / 2;
+        const screenY = t.y - camY + canvas.height / 2;
+        
+        const alpha = (t.life / t.maxLife) * 0.4;
+        const size = t.size * (t.life / t.maxLife);
+        
+        ctx.fillStyle = `hsla(${t.hue}, 100%, 50%, ${alpha})`;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = `hsl(${t.hue}, 100%, 50%)`;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        return t.life > 0;
       });
       
       // Update and draw particles
@@ -662,8 +741,32 @@ export function GameCanvas({
         
         if (snake.checkCollision(snakes)) {
           snake.alive = false;
+          
+          // Find who killed them
+          const killer = snakes.find(s => {
+            if (!s.alive || s === snake) return false;
+            const head = snake.segments[0];
+            for (let i = 10; i < s.segments.length; i++) {
+              const seg = s.segments[i];
+              const dist = Math.hypot(head.x - seg.x, head.y - seg.y);
+              if (dist < 10) return true;
+            }
+            return false;
+          });
+          
+          if (killer) {
+            killFeed.unshift({
+              killer: killer.name,
+              victim: snake.name,
+              time: Date.now(),
+            });
+            if (killFeed.length > 5) killFeed.pop();
+          }
+          
           if (snake.isPlayer) {
             playDeathSound();
+            screenShake = 20;
+            deathFlash = 0.6;
             // Play FNAF bite sound
             if (biteAudioRef.current) {
               biteAudioRef.current.currentTime = 0;
@@ -705,6 +808,15 @@ export function GameCanvas({
             if (snake.isPlayer) {
               playEatSound();
               pelletsEaten++;
+              
+              // Combo system
+              const now = Date.now();
+              if (now - lastEatTime < COMBO_TIMEOUT) {
+                comboCount++;
+              } else {
+                comboCount = 1;
+              }
+              lastEatTime = now;
               
               // Check glutton achievement
               const glutton = checkAchievement(achievements, 'glutton', pelletsEaten);
@@ -802,6 +914,52 @@ export function GameCanvas({
         ctx.arc(mapX, mapY, snake.isPlayer ? 4 : 2, 0, Math.PI * 2);
         ctx.fill();
       });
+      
+      // Draw combo
+      if (comboCount > 1 && Date.now() - lastEatTime < COMBO_TIMEOUT) {
+        const comboAlpha = Math.min(1, (COMBO_TIMEOUT - (Date.now() - lastEatTime)) / 500);
+        const comboScale = 1 + (comboCount / 10);
+        
+        ctx.save();
+        ctx.translate(canvas.width / 2, 150);
+        ctx.scale(comboScale, comboScale);
+        ctx.globalAlpha = comboAlpha;
+        
+        ctx.font = 'bold 48px "Rajdhani", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#ffff00';
+        ctx.strokeStyle = '#ff6600';
+        ctx.lineWidth = 4;
+        ctx.strokeText(`x${comboCount} COMBO!`, 0, 0);
+        ctx.fillText(`x${comboCount} COMBO!`, 0, 0);
+        
+        ctx.restore();
+      }
+      
+      // Draw kill feed
+      ctx.font = 'bold 14px "Rajdhani", sans-serif';
+      ctx.textAlign = 'right';
+      killFeed.forEach((kill, i) => {
+        const age = Date.now() - kill.time;
+        const alpha = Math.max(0, 1 - age / 5000);
+        const y = 20 + i * 25;
+        
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(canvas.width - 320, y - 18, 300, 22);
+        
+        ctx.fillStyle = '#ff4444';
+        ctx.fillText(kill.killer, canvas.width - 170, y);
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('eliminated', canvas.width - 100, y);
+        
+        ctx.fillStyle = '#888888';
+        ctx.fillText(kill.victim, canvas.width - 20, y);
+      });
+      ctx.globalAlpha = 1;
+      
+      ctx.restore();
 
       animationFrameId = requestAnimationFrame(gameLoop);
     };
