@@ -352,7 +352,9 @@ export default function Home() {
               <div className="bg-gradient-to-r from-black/70 to-black/50 backdrop-blur-md px-6 py-3 rounded-lg border-2 border-cyan-400/40 shadow-[0_0_20px_rgba(0,255,255,0.3)]">
                 <div className="text-cyan-400/70 text-xs tracking-widest mb-1">BOOST</div>
                 <div className="font-bold text-sm text-cyan-400 flex items-center gap-2">
-                  <span className="animate-pulse">⚡</span> HOLD SPACE
+                  <span className="animate-pulse">⚡</span> 
+                  <span className="hidden md:inline">HOLD SPACE</span>
+                  <span className="md:hidden">DOUBLE TAP</span>
                 </div>
               </div>
             </div>
