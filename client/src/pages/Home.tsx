@@ -18,7 +18,7 @@ import logo from '@assets/snake-removebg-preview_1772181540141.png';
 
 type GameState = "MENU" | "PLAYING" | "GAMEOVER";
 
-type SnakeSkin = "classic" | "neon" | "galaxy" | "fire" | "ice";
+type SnakeSkin = "classic" | "neon" | "galaxy" | "fire" | "ice" | "toxic" | "electric" | "shadow" | "rainbow" | "gold";
 
 type GameMode = "singleplayer" | "multiplayer";
 
@@ -274,7 +274,7 @@ export default function Home() {
                 <div className="space-y-3">
                   <label className="text-primary/70 text-sm tracking-widest font-display">SELECT SKIN</label>
                   <div className="grid grid-cols-5 gap-2">
-                    {(['classic', 'neon', 'galaxy', 'fire', 'ice'] as SnakeSkin[]).map(skin => (
+                    {(['classic', 'neon', 'galaxy', 'fire', 'ice', 'toxic', 'electric', 'shadow', 'rainbow', 'gold'] as SnakeSkin[]).map(skin => (
                       <button
                         key={skin}
                         type="button"

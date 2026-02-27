@@ -388,6 +388,28 @@ export function GameCanvas({
           bodyColor = `hsl(${180 + Math.sin(Date.now() / 100) * 20}, 100%, 70%)`;
           drawCtx.shadowBlur = 25;
           drawCtx.shadowColor = '#00ffff';
+        } else if (this.skin === 'toxic') {
+          bodyColor = `hsl(${120 + Math.sin(Date.now() / 80) * 30}, 100%, 45%)`;
+          drawCtx.shadowBlur = 30;
+          drawCtx.shadowColor = '#00ff00';
+        } else if (this.skin === 'electric') {
+          bodyColor = `hsl(${200 + Math.sin(Date.now() / 60) * 40}, 100%, 60%)`;
+          drawCtx.shadowBlur = 35;
+          drawCtx.shadowColor = '#00ffff';
+        } else if (this.skin === 'shadow') {
+          bodyColor = `hsl(${this.hue}, 20%, 20%)`;
+          bellyColor = `hsl(${this.hue}, 30%, 30%)`;
+          drawCtx.shadowBlur = 40;
+          drawCtx.shadowColor = '#000000';
+        } else if (this.skin === 'rainbow') {
+          const rainbowHue = (Date.now() / 10) % 360;
+          bodyColor = `hsl(${rainbowHue}, 100%, 50%)`;
+          drawCtx.shadowBlur = 25;
+        } else if (this.skin === 'gold') {
+          bodyColor = `hsl(${45 + Math.sin(Date.now() / 100) * 10}, 100%, 50%)`;
+          bellyColor = `hsl(${45}, 100%, 70%)`;
+          drawCtx.shadowBlur = 30;
+          drawCtx.shadowColor = '#ffd700';
         }
 
         // Draw body as connected segments first (more efficient)
@@ -905,10 +927,35 @@ export function GameCanvas({
         const legend = checkAchievement(achievements, 'legend', currentScore);
         if (legend) onAchievementUnlock(legend);
         
+        const godMode = checkAchievement(achievements, 'god_mode', currentScore);
+        if (godMode) onAchievementUnlock(godMode);
+        
+        // Check boost achievements
+        const boostMaster = checkAchievement(achievements, 'boost_master', boostCount);
+        if (boostMaster) onAchievementUnlock(boostMaster);
+        
+        // Check pellet achievements
+        const feast = checkAchievement(achievements, 'feast', pelletsEaten);
+        if (feast) onAchievementUnlock(feast);
+        
         // Check survivor achievement
         const survivalTime = Math.floor((Date.now() - startTime) / 1000);
         const survivor = checkAchievement(achievements, 'survivor', survivalTime);
         if (survivor) onAchievementUnlock(survivor);
+        
+        const marathon = checkAchievement(achievements, 'marathon', survivalTime);
+        if (marathon) onAchievementUnlock(marathon);
+        
+        // Check rank achievements
+        if (rank <= 3) {
+          const top3 = checkAchievement(achievements, 'top_3', 4 - rank);
+          if (top3) onAchievementUnlock(top3);
+        }
+        
+        if (rank === 1) {
+          const champion = checkAchievement(achievements, 'champion', 1);
+          if (champion) onAchievementUnlock(champion);
+        }
         
         const top = aliveSnakes.sort((a, b) => b.length - a.length).slice(0, 10).map(s => ({
           name: s.name,
