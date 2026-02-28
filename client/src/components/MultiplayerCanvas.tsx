@@ -88,7 +88,7 @@ export function MultiplayerCanvas({
             localX = p.x;
             localY = p.y;
             localAngle = p.angle;
-            localSegments = [...p.segments];
+            localSegments = p.segments.map((s: any) => ({ x: s.x, y: s.y }));
           }
         });
         pellets = message.gameState.pellets;
@@ -99,9 +99,20 @@ export function MultiplayerCanvas({
           players.set(p.id, p);
           if (p.id === playerId) {
             mySnake = p;
-            // Smooth correction
-            localX = localX * 0.7 + p.x * 0.3;
-            localY = localY * 0.7 + p.y * 0.3;
+            // Gentle correction only if difference is significant
+            const dx = p.x - localX;
+            const dy = p.y - localY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 50) {
+              // Large difference - snap to server
+              localX = p.x;
+              localY = p.y;
+              localSegments = p.segments.map((s: any) => ({ x: s.x, y: s.y }));
+            } else if (dist > 5) {
+              // Small difference - smooth correction
+              localX += dx * 0.2;
+              localY += dy * 0.2;
+            }
           }
         });
         
@@ -205,15 +216,25 @@ export function MultiplayerCanvas({
         localY += Math.sin(localAngle) * speed;
         
         // World wrapping
-        if (localX < 0) localX += 4000;
-        if (localX > 4000) localX -= 4000;
-        if (localY < 0) localY += 4000;
-        if (localY > 4000) localY -= 4000;
+        const WORLD_SIZE = 4000;
+        if (localX < 0) localX += WORLD_SIZE;
+        if (localX > WORLD_SIZE) localX -= WORLD_SIZE;
+        if (localY < 0) localY += WORLD_SIZE;
+        if (localY > WORLD_SIZE) localY -= WORLD_SIZE;
         
-        // Update segments
-        localSegments.unshift({ x: localX, y: localY });
-        while (localSegments.length > (mySnake.length || 10)) {
-          localSegments.pop();
+        // Update segments smoothly
+        if (localSegments.length === 0) {
+          localSegments = [{ x: localX, y: localY }];
+        } else {
+          localSegments.unshift({ x: localX, y: localY });
+          const targetLength = mySnake.length || 10;
+          while (localSegments.length > targetLength) {
+            localSegments.pop();
+          }
+          while (localSegments.length < targetLength) {
+            const last = localSegments[localSegments.length - 1];
+            localSegments.push({ x: last.x, y: last.y });
+          }
         }
       }
     };
@@ -268,7 +289,9 @@ export function MultiplayerCanvas({
         const drawX = isMe ? localX : player.x;
         const drawY = isMe ? localY : player.y;
         const drawAngle = isMe ? localAngle : player.angle;
-        const drawSegments = isMe ? localSegments : player.segments;
+        const drawSegments = isMe && localSegments.length > 0 ? localSegments : player.segments;
+        
+        if (!drawSegments || drawSegments.length === 0) return;
         
         // Skin-specific colors
         let bodyColor = `hsl(${player.hue}, 100%, 50%)`;
