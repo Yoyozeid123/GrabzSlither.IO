@@ -60,6 +60,10 @@ export function MultiplayerCanvas({
     let pellets: any[] = [];
     let mySnake: any = null;
     let camera = { x: 0, y: 0 };
+    let localX = 0;
+    let localY = 0;
+    let localAngle = 0;
+    let localSegments: any[] = [];
     const startTime = Date.now();
 
     ws.onopen = () => {
@@ -79,7 +83,13 @@ export function MultiplayerCanvas({
         playerId = message.playerId;
         message.gameState.players.forEach((p: any) => {
           players.set(p.id, p);
-          if (p.id === playerId) mySnake = p;
+          if (p.id === playerId) {
+            mySnake = p;
+            localX = p.x;
+            localY = p.y;
+            localAngle = p.angle;
+            localSegments = [...p.segments];
+          }
         });
         pellets = message.gameState.pellets;
       }
@@ -87,7 +97,12 @@ export function MultiplayerCanvas({
       if (message.type === 'gameState') {
         message.players.forEach((p: any) => {
           players.set(p.id, p);
-          if (p.id === playerId) mySnake = p;
+          if (p.id === playerId) {
+            mySnake = p;
+            // Smooth correction
+            localX = localX * 0.7 + p.x * 0.3;
+            localY = localY * 0.7 + p.y * 0.3;
+          }
         });
         
         // Update UI
@@ -176,14 +191,43 @@ export function MultiplayerCanvas({
     };
     const updateInterval = setInterval(sendUpdate, 50);
 
+    // Local prediction update
+    const updateLocal = () => {
+      if (mySnake && mySnake.alive) {
+        const worldX = camera.x + mouseX;
+        const worldY = camera.y + mouseY;
+        const dx = worldX - localX;
+        const dy = worldY - localY;
+        localAngle = Math.atan2(dy, dx);
+        
+        const speed = isBoosting ? 10 : 5;
+        localX += Math.cos(localAngle) * speed;
+        localY += Math.sin(localAngle) * speed;
+        
+        // World wrapping
+        if (localX < 0) localX += 4000;
+        if (localX > 4000) localX -= 4000;
+        if (localY < 0) localY += 4000;
+        if (localY > 4000) localY -= 4000;
+        
+        // Update segments
+        localSegments.unshift({ x: localX, y: localY });
+        while (localSegments.length > (mySnake.length || 10)) {
+          localSegments.pop();
+        }
+      }
+    };
+
     // Render loop
     const render = () => {
+      updateLocal();
+      
       ctx.fillStyle = '#0a0a0a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       if (mySnake) {
-        camera.x = mySnake.x - canvas.width / 2;
-        camera.y = mySnake.y - canvas.height / 2;
+        camera.x = localX - canvas.width / 2;
+        camera.y = localY - canvas.height / 2;
       }
 
       // Draw grid
@@ -218,6 +262,13 @@ export function MultiplayerCanvas({
       // Draw snakes
       players.forEach(player => {
         if (!player.alive) return;
+        
+        // Use local prediction for own snake
+        const isMe = player.id === playerId;
+        const drawX = isMe ? localX : player.x;
+        const drawY = isMe ? localY : player.y;
+        const drawAngle = isMe ? localAngle : player.angle;
+        const drawSegments = isMe ? localSegments : player.segments;
         
         // Skin-specific colors
         let bodyColor = `hsl(${player.hue}, 100%, 50%)`;
@@ -271,12 +322,12 @@ export function MultiplayerCanvas({
         ctx.shadowColor = `hsl(${player.hue}, 100%, 50%)`;
         
         ctx.beginPath();
-        for (let i = player.segments.length - 1; i >= 0; i--) {
-          const seg = player.segments[i];
+        for (let i = drawSegments.length - 1; i >= 0; i--) {
+          const seg = drawSegments[i];
           const segX = seg.x - camera.x;
           const segY = seg.y - camera.y;
           
-          if (i === player.segments.length - 1) {
+          if (i === drawSegments.length - 1) {
             ctx.moveTo(segX, segY);
           } else {
             ctx.lineTo(segX, segY);
@@ -289,12 +340,12 @@ export function MultiplayerCanvas({
         ctx.strokeStyle = bellyColor;
         ctx.lineWidth = 8;
         ctx.beginPath();
-        for (let i = player.segments.length - 1; i >= 0; i--) {
-          const seg = player.segments[i];
+        for (let i = drawSegments.length - 1; i >= 0; i--) {
+          const seg = drawSegments[i];
           const segX = seg.x - camera.x;
           const segY = seg.y - camera.y;
           
-          if (i === player.segments.length - 1) {
+          if (i === drawSegments.length - 1) {
             ctx.moveTo(segX, segY);
           } else {
             ctx.lineTo(segX, segY);
@@ -304,8 +355,8 @@ export function MultiplayerCanvas({
         
         // Scale pattern
         ctx.shadowBlur = 5;
-        for (let i = player.segments.length - 1; i >= 1; i -= 3) {
-          const seg = player.segments[i];
+        for (let i = drawSegments.length - 1; i >= 1; i -= 3) {
+          const seg = drawSegments[i];
           const segX = seg.x - camera.x;
           const segY = seg.y - camera.y;
           
@@ -316,12 +367,12 @@ export function MultiplayerCanvas({
         }
         
         // Draw head
-        const screenX = player.x - camera.x;
-        const screenY = player.y - camera.y;
+        const screenX = drawX - camera.x;
+        const screenY = drawY - camera.y;
         
         const headLength = 16;
         const headWidth = 10;
-        const eyeAngle = player.angle;
+        const eyeAngle = drawAngle;
         
         const tipX = screenX + Math.cos(eyeAngle) * headLength;
         const tipY = screenY + Math.sin(eyeAngle) * headLength;
