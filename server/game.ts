@@ -4,15 +4,19 @@ import { log } from './index';
 
 interface Player {
   id: string;
+  ws: WebSocket;
   name: string;
   x: number;
   y: number;
   angle: number;
+  targetAngle: number;
   hue: number;
   skin: string;
   length: number;
   segments: { x: number; y: number }[];
   alive: boolean;
+  boosting: boolean;
+  speed: number;
 }
 
 interface GameState {
@@ -22,6 +26,9 @@ interface GameState {
 
 const WORLD_SIZE = 4000;
 const PELLET_COUNT = 600;
+const BASE_SPEED = 3;
+const BOOST_SPEED = 6;
+const SEGMENT_DISTANCE = 8;
 
 export function setupGameServer(httpServer: HTTPServer) {
   const wss = new WebSocketServer({ server: httpServer, path: '/game' });
@@ -49,18 +56,21 @@ export function setupGameServer(httpServer: HTTPServer) {
         const message = JSON.parse(data.toString());
         
         if (message.type === 'join') {
-          // New player joins
           const player: Player = {
             id: playerId,
+            ws,
             name: message.name || 'Player',
             x: Math.random() * WORLD_SIZE,
             y: Math.random() * WORLD_SIZE,
             angle: Math.random() * Math.PI * 2,
+            targetAngle: Math.random() * Math.PI * 2,
             hue: message.hue || Math.random() * 360,
             skin: message.skin || 'classic',
             length: 10,
             segments: [],
-            alive: true
+            alive: true,
+            boosting: false,
+            speed: BASE_SPEED
           };
           
           // Initialize segments
@@ -75,7 +85,7 @@ export function setupGameServer(httpServer: HTTPServer) {
             type: 'init',
             playerId,
             gameState: {
-              players: Array.from(gameState.players.values()),
+              players: Array.from(gameState.players.values()).map(serializePlayer),
               pellets: gameState.pellets
             }
           }));
@@ -83,50 +93,15 @@ export function setupGameServer(httpServer: HTTPServer) {
           // Broadcast new player to others
           broadcast({
             type: 'playerJoined',
-            player
+            player: serializePlayer(player)
           }, playerId);
         }
         
-        if (message.type === 'update') {
-          // Update player position
+        if (message.type === 'input') {
           const player = gameState.players.get(playerId);
           if (player && player.alive) {
-            player.x = message.x;
-            player.y = message.y;
-            player.angle = message.angle;
-            player.length = message.length;
-            player.segments = message.segments;
-          }
-        }
-        
-        if (message.type === 'eat') {
-          // Player ate a pellet
-          const pelletIndex = message.pelletIndex;
-          if (pelletIndex >= 0 && pelletIndex < gameState.pellets.length) {
-            // Respawn pellet
-            gameState.pellets[pelletIndex] = {
-              x: Math.random() * WORLD_SIZE,
-              y: Math.random() * WORLD_SIZE,
-              hue: Math.random() * 360
-            };
-            
-            broadcast({
-              type: 'pelletEaten',
-              pelletIndex,
-              newPellet: gameState.pellets[pelletIndex]
-            });
-          }
-        }
-        
-        if (message.type === 'death') {
-          // Player died
-          const player = gameState.players.get(playerId);
-          if (player) {
-            player.alive = false;
-            broadcast({
-              type: 'playerDied',
-              playerId
-            });
+            player.targetAngle = message.angle;
+            player.boosting = message.boosting;
           }
         }
         
@@ -145,25 +120,105 @@ export function setupGameServer(httpServer: HTTPServer) {
     });
   });
   
-  // Broadcast game state to all players
+  function serializePlayer(player: Player) {
+    return {
+      id: player.id,
+      name: player.name,
+      x: player.x,
+      y: player.y,
+      angle: player.angle,
+      hue: player.hue,
+      skin: player.skin,
+      length: player.length,
+      segments: player.segments,
+      alive: player.alive
+    };
+  }
+  
   function broadcast(message: any, excludeId?: string) {
     const data = JSON.stringify(message);
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
-        // Skip the excluded player if specified
-        if (!excludeId || (client as any).playerId !== excludeId) {
+        const player = Array.from(gameState.players.values()).find(p => p.ws === client);
+        if (!excludeId || player?.id !== excludeId) {
           client.send(data);
         }
       }
     });
   }
   
-  // Game loop - broadcast state updates
+  // Game loop
   setInterval(() => {
+    gameState.players.forEach((player) => {
+      if (!player.alive) return;
+      
+      // Update angle smoothly
+      player.angle = player.targetAngle;
+      
+      // Update speed based on boosting
+      player.speed = player.boosting ? BOOST_SPEED : BASE_SPEED;
+      
+      // Move player
+      player.x += Math.cos(player.angle) * player.speed;
+      player.y += Math.sin(player.angle) * player.speed;
+      
+      // World wrapping
+      if (player.x < 0) player.x += WORLD_SIZE;
+      if (player.x > WORLD_SIZE) player.x -= WORLD_SIZE;
+      if (player.y < 0) player.y += WORLD_SIZE;
+      if (player.y > WORLD_SIZE) player.y -= WORLD_SIZE;
+      
+      // Update segments
+      player.segments.unshift({ x: player.x, y: player.y });
+      while (player.segments.length > player.length) {
+        player.segments.pop();
+      }
+      
+      // Check pellet collisions
+      gameState.pellets.forEach((pellet, index) => {
+        const dist = Math.hypot(pellet.x - player.x, pellet.y - player.y);
+        if (dist < 15) {
+          player.length += 1;
+          
+          // Respawn pellet
+          gameState.pellets[index] = {
+            x: Math.random() * WORLD_SIZE,
+            y: Math.random() * WORLD_SIZE,
+            hue: Math.random() * 360
+          };
+          
+          broadcast({
+            type: 'pelletEaten',
+            pelletIndex: index,
+            newPellet: gameState.pellets[index]
+          });
+        }
+      });
+      
+      // Check collisions with other snakes
+      gameState.players.forEach((other) => {
+        if (other.id === player.id || !other.alive) return;
+        
+        // Check head collision with other's body
+        other.segments.forEach((seg, i) => {
+          if (i < 5) return; // Skip head segments
+          const dist = Math.hypot(seg.x - player.x, seg.y - player.y);
+          if (dist < 15) {
+            player.alive = false;
+            broadcast({
+              type: 'playerDied',
+              playerId: player.id
+            });
+          }
+        });
+      });
+    });
+    
+    // Broadcast game state
     if (gameState.players.size > 0) {
       broadcast({
         type: 'gameState',
-        players: Array.from(gameState.players.values())
+        players: Array.from(gameState.players.values()).map(serializePlayer)
       });
     }
   }, 50); // 20 updates per second

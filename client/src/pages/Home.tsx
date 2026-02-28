@@ -353,7 +353,7 @@ export default function Home() {
                 playerName={playerName}
                 selectedHue={selectedHue}
                 selectedSkin={selectedSkin}
-                onGameOver={handleGameOver}
+                onGameOver={handleGameOverWithStats}
                 onAchievementUnlock={setUnlockedAchievement}
                 updateUI={(score, rank, total) => {
                   setCurrentScore(score);
