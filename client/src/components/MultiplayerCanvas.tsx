@@ -219,20 +219,172 @@ export function MultiplayerCanvas({
       players.forEach(player => {
         if (!player.alive) return;
         
+        // Skin-specific colors
+        let bodyColor = `hsl(${player.hue}, 100%, 50%)`;
+        let bellyColor = `hsl(${player.hue}, 80%, 75%)`;
+        let scaleColor = `hsla(${player.hue}, 100%, 35%, 0.6)`;
+        
+        if (player.skin === 'neon') {
+          ctx.shadowBlur = 30;
+          bodyColor = `hsl(${player.hue}, 100%, 60%)`;
+        } else if (player.skin === 'galaxy') {
+          bodyColor = `hsl(${(player.hue + Date.now() / 50) % 360}, 100%, 50%)`;
+          ctx.shadowBlur = 20;
+        } else if (player.skin === 'fire') {
+          bodyColor = `hsl(${20 + Math.sin(Date.now() / 100) * 20}, 100%, 50%)`;
+          ctx.shadowBlur = 25;
+          ctx.shadowColor = '#ff4400';
+        } else if (player.skin === 'ice') {
+          bodyColor = `hsl(${180 + Math.sin(Date.now() / 100) * 20}, 100%, 70%)`;
+          ctx.shadowBlur = 25;
+          ctx.shadowColor = '#00ffff';
+        } else if (player.skin === 'toxic') {
+          bodyColor = `hsl(${120 + Math.sin(Date.now() / 80) * 30}, 100%, 45%)`;
+          ctx.shadowBlur = 30;
+          ctx.shadowColor = '#00ff00';
+        } else if (player.skin === 'electric') {
+          bodyColor = `hsl(${200 + Math.sin(Date.now() / 60) * 40}, 100%, 60%)`;
+          ctx.shadowBlur = 35;
+          ctx.shadowColor = '#00ffff';
+        } else if (player.skin === 'shadow') {
+          bodyColor = `hsl(${player.hue}, 20%, 20%)`;
+          bellyColor = `hsl(${player.hue}, 30%, 30%)`;
+          ctx.shadowBlur = 40;
+          ctx.shadowColor = '#000000';
+        } else if (player.skin === 'rainbow') {
+          const rainbowHue = (Date.now() / 10) % 360;
+          bodyColor = `hsl(${rainbowHue}, 100%, 50%)`;
+          ctx.shadowBlur = 25;
+        } else if (player.skin === 'gold') {
+          bodyColor = `hsl(${45 + Math.sin(Date.now() / 100) * 10}, 100%, 50%)`;
+          bellyColor = `hsl(${45}, 100%, 70%)`;
+          ctx.shadowBlur = 30;
+          ctx.shadowColor = '#ffd700';
+        }
+        
+        // Draw body segments
+        ctx.strokeStyle = bodyColor;
+        ctx.lineWidth = 18;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = `hsl(${player.hue}, 100%, 50%)`;
+        
+        ctx.beginPath();
+        for (let i = player.segments.length - 1; i >= 0; i--) {
+          const seg = player.segments[i];
+          const segX = seg.x - camera.x;
+          const segY = seg.y - camera.y;
+          
+          if (i === player.segments.length - 1) {
+            ctx.moveTo(segX, segY);
+          } else {
+            ctx.lineTo(segX, segY);
+          }
+        }
+        ctx.stroke();
+        
+        // Belly stripe
+        ctx.shadowBlur = 10;
+        ctx.strokeStyle = bellyColor;
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        for (let i = player.segments.length - 1; i >= 0; i--) {
+          const seg = player.segments[i];
+          const segX = seg.x - camera.x;
+          const segY = seg.y - camera.y;
+          
+          if (i === player.segments.length - 1) {
+            ctx.moveTo(segX, segY);
+          } else {
+            ctx.lineTo(segX, segY);
+          }
+        }
+        ctx.stroke();
+        
+        // Scale pattern
+        ctx.shadowBlur = 5;
+        for (let i = player.segments.length - 1; i >= 1; i -= 3) {
+          const seg = player.segments[i];
+          const segX = seg.x - camera.x;
+          const segY = seg.y - camera.y;
+          
+          ctx.fillStyle = scaleColor;
+          ctx.beginPath();
+          ctx.arc(segX, segY, 6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Draw head
         const screenX = player.x - camera.x;
         const screenY = player.y - camera.y;
         
-        // Draw segments
-        player.segments.forEach((seg: any, i: number) => {
-          const segX = seg.x - camera.x;
-          const segY = seg.y - camera.y;
-          const size = i === 0 ? 12 : 10;
-          
-          ctx.fillStyle = `hsl(${player.hue}, 100%, 50%)`;
+        const headLength = 16;
+        const headWidth = 10;
+        const eyeAngle = player.angle;
+        
+        const tipX = screenX + Math.cos(eyeAngle) * headLength;
+        const tipY = screenY + Math.sin(eyeAngle) * headLength;
+        const leftX = screenX + Math.cos(eyeAngle + Math.PI / 2) * headWidth;
+        const leftY = screenY + Math.sin(eyeAngle + Math.PI / 2) * headWidth;
+        const rightX = screenX + Math.cos(eyeAngle - Math.PI / 2) * headWidth;
+        const rightY = screenY + Math.sin(eyeAngle - Math.PI / 2) * headWidth;
+        const backX = screenX - Math.cos(eyeAngle) * 4;
+        const backY = screenY - Math.sin(eyeAngle) * 4;
+        
+        const gradient = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, headLength);
+        gradient.addColorStop(0, `hsl(${player.hue}, 100%, 60%)`);
+        gradient.addColorStop(1, `hsl(${player.hue}, 100%, 40%)`);
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(leftX, leftY);
+        ctx.lineTo(backX, backY);
+        ctx.lineTo(rightX, rightY);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Eyes
+        const eyeOffsetX = 6;
+        const eyeOffsetY = 4;
+        const leftEyeX = screenX + Math.cos(eyeAngle) * eyeOffsetX + Math.cos(eyeAngle + Math.PI / 2) * eyeOffsetY;
+        const leftEyeY = screenY + Math.sin(eyeAngle) * eyeOffsetX + Math.sin(eyeAngle + Math.PI / 2) * eyeOffsetY;
+        const rightEyeX = screenX + Math.cos(eyeAngle) * eyeOffsetX + Math.cos(eyeAngle - Math.PI / 2) * eyeOffsetY;
+        const rightEyeY = screenY + Math.sin(eyeAngle) * eyeOffsetX + Math.sin(eyeAngle - Math.PI / 2) * eyeOffsetY;
+        
+        ctx.fillStyle = '#ffeb3b';
+        ctx.beginPath();
+        ctx.arc(leftEyeX, leftEyeY, 3, 0, Math.PI * 2);
+        ctx.arc(rightEyeX, rightEyeY, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(leftEyeX, leftEyeY - 2.5);
+        ctx.lineTo(leftEyeX, leftEyeY + 2.5);
+        ctx.moveTo(rightEyeX, rightEyeY - 2.5);
+        ctx.lineTo(rightEyeX, rightEyeY + 2.5);
+        ctx.stroke();
+        
+        // Forked tongue
+        if (Math.sin(Date.now() / 200) > 0.7) {
+          ctx.strokeStyle = '#ff1744';
+          ctx.lineWidth = 1;
+          const tongueX = tipX + Math.cos(eyeAngle) * 8;
+          const tongueY = tipY + Math.sin(eyeAngle) * 8;
           ctx.beginPath();
-          ctx.arc(segX, segY, size, 0, Math.PI * 2);
-          ctx.fill();
-        });
+          ctx.moveTo(tipX, tipY);
+          ctx.lineTo(tongueX, tongueY);
+          ctx.moveTo(tongueX, tongueY);
+          ctx.lineTo(tongueX + Math.cos(eyeAngle + 0.3) * 4, tongueY + Math.sin(eyeAngle + 0.3) * 4);
+          ctx.moveTo(tongueX, tongueY);
+          ctx.lineTo(tongueX + Math.cos(eyeAngle - 0.3) * 4, tongueY + Math.sin(eyeAngle - 0.3) * 4);
+          ctx.stroke();
+        }
+
+        ctx.shadowBlur = 0;
 
         // Draw name
         ctx.fillStyle = '#fff';

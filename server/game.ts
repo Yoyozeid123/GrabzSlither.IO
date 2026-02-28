@@ -26,8 +26,8 @@ interface GameState {
 
 const WORLD_SIZE = 4000;
 const PELLET_COUNT = 600;
-const BASE_SPEED = 3;
-const BOOST_SPEED = 6;
+const BASE_SPEED = 5;
+const BOOST_SPEED = 10;
 const SEGMENT_DISTANCE = 8;
 
 export function setupGameServer(httpServer: HTTPServer) {
