@@ -96,22 +96,27 @@ export function MultiplayerCanvas({
 
       if (message.type === 'gameState') {
         message.players.forEach((p: any) => {
-          players.set(p.id, p);
+          const existing = players.get(p.id);
+          if (existing) {
+            // Update server data
+            existing.x = p.x;
+            existing.y = p.y;
+            existing.angle = p.angle;
+            existing.length = p.length;
+            existing.alive = p.alive;
+          } else {
+            players.set(p.id, p);
+          }
+          
           if (p.id === playerId) {
-            mySnake = p;
-            // Gentle correction only if difference is significant
+            mySnake = players.get(p.id);
+            // Only correct if very far off
             const dx = p.x - localX;
             const dy = p.y - localY;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist > 50) {
-              // Large difference - snap to server
+            if (dist > 100) {
               localX = p.x;
               localY = p.y;
-              localSegments = p.segments.map((s: any) => ({ x: s.x, y: s.y }));
-            } else if (dist > 5) {
-              // Small difference - smooth correction
-              localX += dx * 0.2;
-              localY += dy * 0.2;
             }
           }
         });
@@ -184,7 +189,7 @@ export function MultiplayerCanvas({
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 
-    // Send updates to server
+    // Send updates to server (reduced frequency)
     const sendUpdate = () => {
       if (mySnake && ws.readyState === WebSocket.OPEN) {
         const worldX = camera.x + mouseX;
@@ -200,7 +205,7 @@ export function MultiplayerCanvas({
         }));
       }
     };
-    const updateInterval = setInterval(sendUpdate, 50);
+    const updateInterval = setInterval(sendUpdate, 100); // Reduced from 50ms
 
     // Local prediction update
     const updateLocal = () => {

@@ -214,14 +214,23 @@ export function setupGameServer(httpServer: HTTPServer) {
       });
     });
     
-    // Broadcast game state
+    // Broadcast game state (only positions, not full state)
     if (gameState.players.size > 0) {
+      const lightState = Array.from(gameState.players.values()).map(p => ({
+        id: p.id,
+        x: p.x,
+        y: p.y,
+        angle: p.angle,
+        length: p.length,
+        alive: p.alive
+      }));
+      
       broadcast({
         type: 'gameState',
-        players: Array.from(gameState.players.values()).map(serializePlayer)
+        players: lightState
       });
     }
-  }, 50); // 20 updates per second
+  }, 100); // Reduced to 10 Hz (was 20 Hz)
   
   log('WebSocket game server initialized', 'websocket');
 }
