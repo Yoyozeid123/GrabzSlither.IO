@@ -22,10 +22,12 @@ interface Player {
 interface GameState {
   players: Map<string, Player>;
   pellets: { x: number; y: number; hue: number }[];
+  powerUps: { x: number; y: number; type: 'speed' | 'shield' | 'magnet' }[];
 }
 
 const WORLD_SIZE = 4000;
 const PELLET_COUNT = 600;
+const POWERUP_COUNT = 5;
 const BASE_SPEED = 5;
 const BOOST_SPEED = 10;
 const SEGMENT_DISTANCE = 8;
@@ -35,7 +37,8 @@ export function setupGameServer(httpServer: HTTPServer) {
   
   const gameState: GameState = {
     players: new Map(),
-    pellets: []
+    pellets: [],
+    powerUps: []
   };
   
   // Initialize pellets
@@ -44,6 +47,16 @@ export function setupGameServer(httpServer: HTTPServer) {
       x: Math.random() * WORLD_SIZE,
       y: Math.random() * WORLD_SIZE,
       hue: Math.random() * 360
+    });
+  }
+  
+  // Initialize power-ups
+  const powerUpTypes: ('speed' | 'shield' | 'magnet')[] = ['speed', 'shield', 'magnet'];
+  for (let i = 0; i < POWERUP_COUNT; i++) {
+    gameState.powerUps.push({
+      x: Math.random() * WORLD_SIZE,
+      y: Math.random() * WORLD_SIZE,
+      type: powerUpTypes[i % 3]
     });
   }
   
@@ -86,7 +99,8 @@ export function setupGameServer(httpServer: HTTPServer) {
             playerId,
             gameState: {
               players: Array.from(gameState.players.values()).map(serializePlayer),
-              pellets: gameState.pellets
+              pellets: gameState.pellets,
+              powerUps: gameState.powerUps
             }
           }));
           
@@ -122,6 +136,25 @@ export function setupGameServer(httpServer: HTTPServer) {
               type: 'pelletEaten',
               pelletIndex,
               newPellet: gameState.pellets[pelletIndex]
+            });
+          }
+        }
+        
+        if (message.type === 'eatPowerUp') {
+          const powerUpIndex = message.powerUpIndex;
+          if (powerUpIndex >= 0 && powerUpIndex < gameState.powerUps.length) {
+            // Respawn power-up
+            const powerUpTypes: ('speed' | 'shield' | 'magnet')[] = ['speed', 'shield', 'magnet'];
+            gameState.powerUps[powerUpIndex] = {
+              x: Math.random() * WORLD_SIZE,
+              y: Math.random() * WORLD_SIZE,
+              type: powerUpTypes[Math.floor(Math.random() * 3)]
+            };
+            
+            broadcast({
+              type: 'powerUpEaten',
+              powerUpIndex,
+              newPowerUp: gameState.powerUps[powerUpIndex]
             });
           }
         }
@@ -195,13 +228,14 @@ export function setupGameServer(httpServer: HTTPServer) {
         player.segments.pop();
       }
       
-      // Check collisions with other snakes
+      // Check collisions with other snakes (including self)
       gameState.players.forEach((other) => {
-        if (other.id === player.id || !other.alive) return;
+        if (!other.alive) return;
         
-        // Check head collision with other's body
-        other.segments.forEach((seg, i) => {
-          if (i < 5) return; // Skip head segments
+        // Check head collision with body segments
+        const startIndex = other.id === player.id ? 10 : 5; // Skip more segments for self-collision
+        for (let i = startIndex; i < other.segments.length; i++) {
+          const seg = other.segments[i];
           const dist = Math.hypot(seg.x - player.x, seg.y - player.y);
           if (dist < 15) {
             player.alive = false;
@@ -209,8 +243,9 @@ export function setupGameServer(httpServer: HTTPServer) {
               type: 'playerDied',
               playerId: player.id
             });
+            return;
           }
-        });
+        }
       });
     });
     

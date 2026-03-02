@@ -58,12 +58,14 @@ export function MultiplayerCanvas({
     let playerId: string | null = null;
     let players: Map<string, any> = new Map();
     let pellets: any[] = [];
+    let powerUps: any[] = [];
     let mySnake: any = null;
     let camera = { x: 0, y: 0 };
     let localX = 0;
     let localY = 0;
     let localAngle = 0;
     let localSegments: any[] = [];
+    let activePowerUp: { type: string; endTime: number } | null = null;
     const startTime = Date.now();
 
     ws.onopen = () => {
@@ -98,6 +100,7 @@ export function MultiplayerCanvas({
           }
         });
         pellets = message.gameState.pellets;
+        powerUps = message.gameState.powerUps || [];
       }
 
       if (message.type === 'gameState') {
@@ -169,6 +172,10 @@ export function MultiplayerCanvas({
       if (message.type === 'pelletEaten') {
         pellets[message.pelletIndex] = message.newPellet;
       }
+      
+      if (message.type === 'powerUpEaten') {
+        powerUps[message.powerUpIndex] = message.newPowerUp;
+      }
     };
 
     ws.onerror = (error) => {
@@ -223,9 +230,18 @@ export function MultiplayerCanvas({
         const dy = worldY - localY;
         localAngle = Math.atan2(dy, dx);
         
-        const speed = isBoosting ? 10 : 5;
-        localX += Math.cos(localAngle) * speed;
-        localY += Math.sin(localAngle) * speed;
+        // Apply power-up effects
+        let currentSpeed = isBoosting ? 10 : 5;
+        if (activePowerUp) {
+          if (Date.now() > activePowerUp.endTime) {
+            activePowerUp = null;
+          } else if (activePowerUp.type === 'speed') {
+            currentSpeed *= 2;
+          }
+        }
+        
+        localX += Math.cos(localAngle) * currentSpeed;
+        localY += Math.sin(localAngle) * currentSpeed;
         
         // World wrapping
         const WORLD_SIZE = 4000;
@@ -243,6 +259,25 @@ export function MultiplayerCanvas({
               ws.send(JSON.stringify({
                 type: 'eatPellet',
                 pelletIndex: index
+              }));
+            }
+          }
+        });
+        
+        // Check power-up collisions
+        powerUps.forEach((powerUp, index) => {
+          const dist = Math.hypot(powerUp.x - localX, powerUp.y - localY);
+          if (dist < 25) {
+            // Eat power-up
+            activePowerUp = {
+              type: powerUp.type,
+              endTime: Date.now() + 5000 // 5 seconds
+            };
+            
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({
+                type: 'eatPowerUp',
+                powerUpIndex: index
               }));
             }
           }
@@ -327,6 +362,31 @@ export function MultiplayerCanvas({
           ctx.beginPath();
           ctx.arc(screenX, screenY, 4, 0, Math.PI * 2);
           ctx.fill();
+        }
+      });
+      
+      // Draw power-ups
+      powerUps.forEach(powerUp => {
+        const screenX = powerUp.x - camera.x;
+        const screenY = powerUp.y - camera.y;
+        if (screenX > -50 && screenX < canvas.width + 50 && screenY > -50 && screenY < canvas.height + 50) {
+          const pulse = 1 + Math.sin(Date.now() / 250) * 0.2;
+          const color = powerUp.type === 'speed' ? '#ffff00' : powerUp.type === 'shield' ? '#00ffff' : '#ff00ff';
+          
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = color;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(screenX, screenY, 15 * pulse, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = '#000';
+          ctx.font = 'bold 20px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const icon = powerUp.type === 'speed' ? '⚡' : powerUp.type === 'shield' ? '🛡️' : '🧲';
+          ctx.fillText(icon, screenX, screenY);
         }
       });
 
