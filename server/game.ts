@@ -230,7 +230,7 @@ export function setupGameServer(httpServer: HTTPServer) {
         players: lightState
       });
     }
-  }, 100); // Reduced to 10 Hz (was 20 Hz)
+  }, 50); // Back to 20 Hz for smoother sync
   
   log('WebSocket game server initialized', 'websocket');
 }

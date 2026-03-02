@@ -123,14 +123,7 @@ export function MultiplayerCanvas({
           
           if (p.id === playerId) {
             mySnake = players.get(p.id);
-            // Only correct if very far off
-            const dx = p.x - localX;
-            const dy = p.y - localY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist > 100) {
-              localX = p.x;
-              localY = p.y;
-            }
+            // NEVER correct own position - trust client 100%
           }
         });
         
@@ -218,7 +211,7 @@ export function MultiplayerCanvas({
         }));
       }
     };
-    const updateInterval = setInterval(sendUpdate, 100); // Reduced from 50ms
+    const updateInterval = setInterval(sendUpdate, 50); // Back to 20Hz
 
     // Local prediction update
     const updateLocal = () => {
@@ -262,14 +255,14 @@ export function MultiplayerCanvas({
         if (player.id === playerId || !player.alive) return;
         
         if (player.targetX !== undefined) {
-          // Smooth interpolation - move gradually toward target
+          // FAST interpolation - almost instant
           const dx = player.targetX - player.x;
           const dy = player.targetY - player.y;
-          player.x += dx * 0.5; // Move 50% of the way each frame
-          player.y += dy * 0.5;
+          player.x += dx * 0.8; // Move 80% of the way
+          player.y += dy * 0.8;
           player.angle = player.targetAngle;
           
-          // Generate segments client-side for smooth rendering
+          // Generate segments client-side
           if (!player.segments) {
             player.segments = Array(player.length || 10).fill(null).map(() => ({ x: player.x, y: player.y }));
           }
