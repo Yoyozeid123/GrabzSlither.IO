@@ -98,13 +98,20 @@ export function MultiplayerCanvas({
         message.players.forEach((p: any) => {
           const existing = players.get(p.id);
           if (existing) {
-            // Update server data
-            existing.x = p.x;
-            existing.y = p.y;
-            existing.angle = p.angle;
+            // Smooth interpolation for other players
+            if (p.id !== playerId) {
+              existing.targetX = p.x;
+              existing.targetY = p.y;
+              existing.targetAngle = p.angle;
+            }
             existing.length = p.length;
             existing.alive = p.alive;
           } else {
+            // New player - add interpolation targets
+            p.targetX = p.x;
+            p.targetY = p.y;
+            p.targetAngle = p.angle;
+            if (!p.segments) p.segments = [{ x: p.x, y: p.y }];
             players.set(p.id, p);
           }
           
@@ -209,6 +216,7 @@ export function MultiplayerCanvas({
 
     // Local prediction update
     const updateLocal = () => {
+      // Update own snake
       if (mySnake && mySnake.alive) {
         const worldX = camera.x + mouseX;
         const worldY = camera.y + mouseY;
@@ -242,6 +250,25 @@ export function MultiplayerCanvas({
           }
         }
       }
+      
+      // Interpolate other players
+      players.forEach((player) => {
+        if (player.id === playerId || !player.alive) return;
+        
+        if (player.targetX !== undefined) {
+          // Smooth interpolation
+          player.x = player.x * 0.7 + player.targetX * 0.3;
+          player.y = player.y * 0.7 + player.targetY * 0.3;
+          player.angle = player.targetAngle;
+          
+          // Generate segments client-side for smooth rendering
+          if (!player.segments) player.segments = [];
+          player.segments.unshift({ x: player.x, y: player.y });
+          while (player.segments.length > (player.length || 10)) {
+            player.segments.pop();
+          }
+        }
+      });
     };
 
     // Render loop
