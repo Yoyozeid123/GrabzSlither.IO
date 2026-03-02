@@ -232,8 +232,13 @@ export function setupGameServer(httpServer: HTTPServer) {
       gameState.players.forEach((other) => {
         if (!other.alive) return;
         
-        // Check head collision with body segments
-        const startIndex = other.id === player.id ? 10 : 5; // Skip more segments for self-collision
+        // For self-collision, need at least 15 segments and skip first 15
+        // For other players, skip first 5 segments
+        const isSelf = other.id === player.id;
+        if (isSelf && other.segments.length < 15) return; // Not long enough to hit yourself
+        
+        const startIndex = isSelf ? 15 : 5;
+        
         for (let i = startIndex; i < other.segments.length; i++) {
           const seg = other.segments[i];
           const dist = Math.hypot(seg.x - player.x, seg.y - player.y);
