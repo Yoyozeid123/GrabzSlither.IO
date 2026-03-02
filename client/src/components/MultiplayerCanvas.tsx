@@ -234,6 +234,20 @@ export function MultiplayerCanvas({
         if (localY < 0) localY += WORLD_SIZE;
         if (localY > WORLD_SIZE) localY -= WORLD_SIZE;
         
+        // Check pellet collisions client-side
+        pellets.forEach((pellet, index) => {
+          const dist = Math.hypot(pellet.x - localX, pellet.y - localY);
+          if (dist < 20) {
+            // Eat pellet - notify server
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({
+                type: 'eatPellet',
+                pelletIndex: index
+              }));
+            }
+          }
+        });
+        
         // Update segments smoothly
         if (localSegments.length === 0) {
           localSegments = [{ x: localX, y: localY }];

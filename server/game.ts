@@ -105,6 +105,27 @@ export function setupGameServer(httpServer: HTTPServer) {
           }
         }
         
+        if (message.type === 'eatPellet') {
+          const player = gameState.players.get(playerId);
+          const pelletIndex = message.pelletIndex;
+          if (player && player.alive && pelletIndex >= 0 && pelletIndex < gameState.pellets.length) {
+            player.length += 1;
+            
+            // Respawn pellet
+            gameState.pellets[pelletIndex] = {
+              x: Math.random() * WORLD_SIZE,
+              y: Math.random() * WORLD_SIZE,
+              hue: Math.random() * 360
+            };
+            
+            broadcast({
+              type: 'pelletEaten',
+              pelletIndex,
+              newPellet: gameState.pellets[pelletIndex]
+            });
+          }
+        }
+        
       } catch (err) {
         log(`Error parsing message: ${err}`, 'websocket');
       }
@@ -173,27 +194,6 @@ export function setupGameServer(httpServer: HTTPServer) {
       while (player.segments.length > player.length) {
         player.segments.pop();
       }
-      
-      // Check pellet collisions
-      gameState.pellets.forEach((pellet, index) => {
-        const dist = Math.hypot(pellet.x - player.x, pellet.y - player.y);
-        if (dist < 15) {
-          player.length += 1;
-          
-          // Respawn pellet
-          gameState.pellets[index] = {
-            x: Math.random() * WORLD_SIZE,
-            y: Math.random() * WORLD_SIZE,
-            hue: Math.random() * 360
-          };
-          
-          broadcast({
-            type: 'pelletEaten',
-            pelletIndex: index,
-            newPellet: gameState.pellets[index]
-          });
-        }
-      });
       
       // Check collisions with other snakes
       gameState.players.forEach((other) => {
