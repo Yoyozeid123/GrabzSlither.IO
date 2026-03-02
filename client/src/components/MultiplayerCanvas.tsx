@@ -82,7 +82,13 @@ export function MultiplayerCanvas({
       if (message.type === 'init') {
         playerId = message.playerId;
         message.gameState.players.forEach((p: any) => {
+          // Initialize with smooth data
+          p.targetX = p.x;
+          p.targetY = p.y;
+          p.targetAngle = p.angle;
+          p.segments = Array(p.length || 10).fill(null).map(() => ({ x: p.x, y: p.y }));
           players.set(p.id, p);
+          
           if (p.id === playerId) {
             mySnake = p;
             localX = p.x;
@@ -251,18 +257,23 @@ export function MultiplayerCanvas({
         }
       }
       
-      // Interpolate other players
+      // Interpolate other players smoothly
       players.forEach((player) => {
         if (player.id === playerId || !player.alive) return;
         
         if (player.targetX !== undefined) {
-          // Smooth interpolation
-          player.x = player.x * 0.7 + player.targetX * 0.3;
-          player.y = player.y * 0.7 + player.targetY * 0.3;
+          // Smooth interpolation - move gradually toward target
+          const dx = player.targetX - player.x;
+          const dy = player.targetY - player.y;
+          player.x += dx * 0.5; // Move 50% of the way each frame
+          player.y += dy * 0.5;
           player.angle = player.targetAngle;
           
           // Generate segments client-side for smooth rendering
-          if (!player.segments) player.segments = [];
+          if (!player.segments) {
+            player.segments = Array(player.length || 10).fill(null).map(() => ({ x: player.x, y: player.y }));
+          }
+          
           player.segments.unshift({ x: player.x, y: player.y });
           while (player.segments.length > (player.length || 10)) {
             player.segments.pop();
